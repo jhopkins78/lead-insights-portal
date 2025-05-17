@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -33,9 +32,10 @@ import {
   CollapsibleTrigger 
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown, Filter, Search, Info } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { ChevronUp, ChevronDown, Filter, Search, Info, BarChart2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { analyzeLead, LeadAnalysisRequest } from "@/services/api";
+import PredictiveInsightModal from "@/components/modals/PredictiveInsightModal";
 
 // Define types for our Lead data
 interface Lead {
@@ -49,6 +49,10 @@ interface Lead {
   last_insight?: string;
   confidence?: number;
   additional_data?: Record<string, any>;
+  deal_amount?: number;
+  engagement_score?: number;
+  industry?: string;
+  stage?: string;
 }
 
 // Mock API function to fetch leads
@@ -139,6 +143,10 @@ const LeadExplorer: React.FC = () => {
   const [sortField, setSortField] = useState<keyof Lead>("score");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   
+  // New state for prediction modal
+  const [isPredictionModalOpen, setIsPredictionModalOpen] = useState<boolean>(false);
+  const [selectedLeadForPrediction, setSelectedLeadForPrediction] = useState<Lead | null>(null);
+  
   const { toast } = useToast();
   
   // Fetch leads data
@@ -151,6 +159,13 @@ const LeadExplorer: React.FC = () => {
   const handleRowClick = (lead: Lead) => {
     setSelectedLead(lead);
     setIsDetailOpen(true);
+  };
+  
+  // Function to handle prediction button click
+  const handleViewPrediction = (e: React.MouseEvent, lead: Lead) => {
+    e.stopPropagation(); // Prevent row click handler from firing
+    setSelectedLeadForPrediction(lead);
+    setIsPredictionModalOpen(true);
   };
   
   // Function to re-analyze lead
@@ -365,16 +380,17 @@ const LeadExplorer: React.FC = () => {
                   Score {renderSortIcon('score')}
                 </div>
               </TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">Loading leads...</TableCell>
+                <TableCell colSpan={7} className="h-24 text-center">Loading leads...</TableCell>
               </TableRow>
             ) : filteredLeads.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">No leads match your filters</TableCell>
+                <TableCell colSpan={7} className="h-24 text-center">No leads match your filters</TableCell>
               </TableRow>
             ) : (
               filteredLeads.map((lead) => (
@@ -400,6 +416,17 @@ const LeadExplorer: React.FC = () => {
                     >
                       {lead.score}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center gap-1"
+                      onClick={(e) => handleViewPrediction(e, lead)}
+                    >
+                      <BarChart2 className="h-4 w-4" />
+                      <span className="hidden sm:inline">View</span>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -494,6 +521,13 @@ const LeadExplorer: React.FC = () => {
           )}
         </SheetContent>
       </Sheet>
+      
+      {/* Prediction Modal */}
+      <PredictiveInsightModal
+        open={isPredictionModalOpen}
+        onOpenChange={setIsPredictionModalOpen}
+        leadData={selectedLeadForPrediction}
+      />
     </div>
   );
 };
