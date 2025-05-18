@@ -1,68 +1,33 @@
+import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 
-import { usePredictionData } from "./prediction/usePredictionData";
-import { usePredictionFilters } from "./prediction/usePredictionFilters";
-import { usePredictionSort } from "./prediction/usePredictionSort";
-import { usePredictionPagination } from "./prediction/usePredictionPagination";
-import { usePredictionActions } from "./prediction/usePredictionActions";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export function usePredictionHistory() {
-  // Get prediction data from Supabase
-  const { allPredictions, isLoading, error, refetchPredictions } = usePredictionData();
-  
-  // Apply filters
-  const { filters, setSearchQuery, setScoreRange, setDateRange, filteredPredictions } = 
-    usePredictionFilters(allPredictions);
-  
-  // Apply sorting
-  const { sort, sortedPredictions, handleSort } = 
-    usePredictionSort(filteredPredictions);
-  
-  // Apply pagination
-  const { pagination, setCurrentPage, paginatedPredictions } = 
-    usePredictionPagination(sortedPredictions);
-  
-  // Actions
-  const { 
-    selectedPrediction, 
-    setSelectedPrediction,
-    isModalOpen,
-    setIsModalOpen,
-    isActionLoading,
-    handleRescorePrediction,
-    handleExportCSV,
-    navigateToLeadExplorer
-  } = usePredictionActions(allPredictions, refetchPredictions);
+export const usePredictionHistory = () => {
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Helper function for slider value change
-  const handleSliderChange = (value: number[]) => {
-    setScoreRange([value[0], value[1]] as [number, number]);
-  };
+  useEffect(() => {
+    const fetchPredictions = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("lead_predictions")
+        .select("*")
+        .order("predicted_at", { ascending: false });
 
-  return {
-    predictions: paginatedPredictions,
-    searchQuery: filters.searchQuery,
-    setSearchQuery,
-    scoreRange: filters.scoreRange,
-    setScoreRange,
-    handleSliderChange,
-    dateRange: filters.dateRange,
-    setDateRange,
-    sortColumn: sort.column,
-    sortOrder: sort.order,
-    setSortColumn: (column: string) => handleSort(column),
-    setSortOrder: (order: "asc" | "desc") => {},  // This is handled by handleSort
-    isLoading: isLoading || isActionLoading,
-    error,
-    currentPage: pagination.currentPage,
-    setCurrentPage,
-    totalPages: pagination.totalPages,
-    selectedPrediction,
-    setSelectedPrediction,
-    isModalOpen,
-    setIsModalOpen,
-    handleRescorePrediction,
-    handleExportCSV,
-    navigateToLeadExplorer,
-    handleSort,
-  };
-}
+      if (error) {
+        setError(error.message);
+      } else {
+        setPredictions(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchPredictions();
+  }, []);
+
+  return { predictions, loading, error };
+};
