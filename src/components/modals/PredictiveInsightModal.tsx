@@ -5,20 +5,21 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 interface ProgressCircleProps {
   value: number;
   max: number;
-  label: string;
 }
 
-const ProgressCircle: React.FC<ProgressCircleProps> = ({ value, max, label }) => {
+const ProgressCircle: React.FC<ProgressCircleProps> = ({ value, max }) => {
   // Calculate the percentage and determine the color
   const percentage = (value / max) * 100;
   let circleColor = "text-rose-600";
@@ -34,7 +35,7 @@ const ProgressCircle: React.FC<ProgressCircleProps> = ({ value, max, label }) =>
       <div className="relative w-32 h-32 flex items-center justify-center rounded-full border-8 border-muted">
         <span className={`text-3xl font-bold ${circleColor}`}>{value}</span>
       </div>
-      <span className="mt-2 text-sm font-medium">{label}</span>
+      <span className="mt-2 text-sm font-medium">Lead Score</span>
     </div>
   );
 };
@@ -51,10 +52,10 @@ interface PredictiveInsightModalProps {
   leadData: {
     name: string;
     company: string;
-    deal_amount?: number;
-    engagement_score?: number;
-    industry?: string;
-    stage?: string;
+    title?: string;
+    email?: string;
+    intent?: string;
+    score?: number;
   } | null;
 }
 
@@ -72,27 +73,19 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
     
     setIsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/predict`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lead_name: leadData.name,
-          company: leadData.company,
-          deal_amount: leadData.deal_amount,
-          engagement_score: leadData.engagement_score,
-          industry: leadData.industry,
-          stage: leadData.stage,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to retrieve prediction");
-      }
-
-      const data: PredictionResponse = await response.json();
-      setPrediction(data);
+      // For demo purposes, generate mock prediction data
+      // In a real implementation, this would call your API
+      setTimeout(() => {
+        const mockPrediction: PredictionResponse = {
+          lead_score: leadData.score || Math.floor(Math.random() * 100),
+          classification: leadData.intent || ["High Value", "Medium Value", "Low Value"][Math.floor(Math.random() * 3)],
+          gpt_summary: `${leadData.name} from ${leadData.company} shows ${Math.random() > 0.5 ? 'strong' : 'moderate'} engagement with our product. Based on their interaction patterns, they appear to be interested in solutions that can help with their ${leadData.intent?.toLowerCase() || 'business needs'}.`
+        };
+        
+        setPrediction(mockPrediction);
+        setIsLoading(false);
+      }, 1500);
+      
     } catch (error) {
       console.error("Error fetching prediction:", error);
       toast({
@@ -100,7 +93,6 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
         description: "Failed to retrieve prediction for this lead. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -110,9 +102,15 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
     if (open && leadData && !prediction) {
       fetchPrediction();
     }
+    
+    // Reset prediction when modal is closed
+    if (!open) {
+      setPrediction(null);
+    }
   }, [open, leadData]);
 
   const handleRescore = () => {
+    setPrediction(null);
     fetchPrediction();
   };
 
@@ -123,6 +121,9 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
           <DialogTitle>
             Predictive Score: {leadData?.name || ""}
           </DialogTitle>
+          <DialogDescription>
+            AI-generated insights for this lead
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -136,7 +137,6 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
               <ProgressCircle 
                 value={prediction.lead_score} 
                 max={100} 
-                label="Lead Score" 
               />
             </div>
 

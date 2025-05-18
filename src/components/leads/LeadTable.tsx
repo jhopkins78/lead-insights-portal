@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown, BarChart2 } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { Lead } from "@/components/coaching/types";
 
 interface LeadTableProps {
@@ -132,11 +132,9 @@ const LeadTable: React.FC<LeadTableProps> = ({
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="flex items-center gap-1"
                     onClick={(e) => handleViewPrediction(e, lead)}
                   >
-                    <BarChart2 className="h-4 w-4" />
-                    <span className="hidden sm:inline">View</span>
+                    View
                   </Button>
                 </TableCell>
               </TableRow>

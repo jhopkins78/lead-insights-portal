@@ -53,7 +53,7 @@ const LeadExplorer: React.FC = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Lead Explorer</h2>
-        <Button onClick={() => refetch()} variant="outline">Refresh Data</Button>
+        <Button onClick={() => refetch()}>Refresh Data</Button>
       </div>
       
       {/* Filters */}
