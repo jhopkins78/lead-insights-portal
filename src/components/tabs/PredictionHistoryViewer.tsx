@@ -6,6 +6,7 @@ import PredictionFilters from "../prediction-history/PredictionFilters";
 import PredictionTable from "../prediction-history/PredictionTable";
 import PredictionPagination from "../prediction-history/PredictionPagination";
 import PredictionDetailModal from "../prediction-history/PredictionDetailModal";
+import { Prediction } from "@/components/prediction-history/types";
 
 const PredictionHistoryViewer: React.FC = () => {
   // Use our refactored custom hook for prediction history data and state
@@ -35,7 +36,7 @@ const PredictionHistoryViewer: React.FC = () => {
   } = usePredictionHistory();
 
   // Handle viewing a prediction
-  const handleViewPrediction = (prediction: any) => {
+  const handleViewPrediction = (prediction: Prediction) => {
     setSelectedPrediction(prediction);
     setIsModalOpen(true);
   };

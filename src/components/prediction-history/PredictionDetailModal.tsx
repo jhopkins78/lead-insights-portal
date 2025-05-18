@@ -5,25 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RefreshCcw } from "lucide-react";
 import { format } from "date-fns";
+import { Prediction } from "@/components/prediction-history/types";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-interface Prediction {
-  lead_name: string;
-  company: string;
-  lead_score: number;
-  classification: string;
-  predicted_at: string;
-  gpt_summary: string;
-  industry?: string;
-  stage?: string;
-  engagement_score?: number;
-  deal_amount?: number;
-}
 
 interface PredictionDetailModalProps {
   isOpen: boolean;
@@ -86,7 +74,7 @@ const PredictionDetailModal: React.FC<PredictionDetailModalProps> = ({
           <div className="space-y-1 col-span-2">
             <p className="text-sm font-medium">GPT Summary</p>
             <Textarea
-              value={prediction.gpt_summary}
+              value={prediction.gpt_summary || "No summary available"}
               readOnly
               className="min-h-[120px] resize-none"
             />

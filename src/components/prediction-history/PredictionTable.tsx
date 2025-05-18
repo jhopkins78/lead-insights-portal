@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,19 +12,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowUpDown, Eye, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-
-interface Prediction {
-  lead_name: string;
-  company: string;
-  lead_score: number;
-  classification: string;
-  predicted_at: string;
-  gpt_summary: string;
-  industry?: string;
-  stage?: string;
-  engagement_score?: number;
-  deal_amount?: number;
-}
+import { Prediction } from "@/components/prediction-history/types";
 
 interface PredictionTableProps {
   predictions: Prediction[];
