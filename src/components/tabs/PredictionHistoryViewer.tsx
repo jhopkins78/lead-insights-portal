@@ -6,22 +6,20 @@ import PredictionFilters from "../prediction-history/PredictionFilters";
 import PredictionTable from "../prediction-history/PredictionTable";
 import PredictionPagination from "../prediction-history/PredictionPagination";
 import PredictionDetailModal from "../prediction-history/PredictionDetailModal";
-import { Prediction } from "../prediction-history/types";
 
 const PredictionHistoryViewer: React.FC = () => {
-  // Use our custom hook for prediction history data and state
+  // Use our refactored custom hook for prediction history data and state
   const {
     predictions,
     searchQuery,
     setSearchQuery,
     scoreRange,
-    setScoreRange,
+    handleSliderChange,
     dateRange,
     setDateRange,
+    handleSort,
     sortColumn,
-    setSortColumn,
     sortOrder,
-    setSortOrder,
     isLoading,
     error,
     currentPage,
@@ -36,23 +34,8 @@ const PredictionHistoryViewer: React.FC = () => {
     navigateToLeadExplorer,
   } = usePredictionHistory();
 
-  // Handle sorting
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortOrder("asc");
-    }
-  };
-
-  // Handle slider value change with type conversion
-  const handleSliderChange = (value: number[]) => {
-    setScoreRange([value[0], value[1]] as [number, number]);
-  };
-
   // Handle viewing a prediction
-  const handleViewPrediction = (prediction: Prediction) => {
+  const handleViewPrediction = (prediction: any) => {
     setSelectedPrediction(prediction);
     setIsModalOpen(true);
   };
