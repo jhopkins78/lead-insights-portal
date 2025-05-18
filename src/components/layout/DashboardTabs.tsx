@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import DashboardTabContent from "./DashboardTabContent";
 import { TabInfo } from "@/types/dashboard";
 
@@ -33,7 +33,8 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                    isSamaritanAI ? getTabsForGroup(activeSamaritanGroup).length :
                    activePage === "lead-intelligence" ? 5 : // Updated to include predictions tab
                    activePage === "predictive-analysis" ? 3 : 
-                   activePage === "system-settings" ? 4 : 1
+                   activePage === "system-settings" ? 4 : 
+                   activePage === "data-intelligence" ? 5 : 1
                  }, minmax(0, 1fr))`
                }}>
         
@@ -64,3 +65,4 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
 };
 
 export default DashboardTabs;
+
