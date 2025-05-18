@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -27,7 +27,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Download, Eye, ArrowUpDown, RefreshCcw } from "lucide-react";
+import { Download, Eye, ArrowUpDown, RefreshCcw, AlertTriangle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { usePredictionHistory } from "@/hooks/usePredictionHistory";
@@ -47,6 +47,7 @@ const PredictionHistoryViewer: React.FC = () => {
     sortOrder,
     setSortOrder,
     isLoading,
+    error,
     currentPage,
     setCurrentPage,
     totalPages,
@@ -102,6 +103,7 @@ const PredictionHistoryViewer: React.FC = () => {
           onClick={handleExportCSV}
           variant="outline"
           className="flex items-center gap-2"
+          disabled={isLoading || !!error}
         >
           <Download className="h-4 w-4" />
           Export CSV
@@ -117,6 +119,7 @@ const PredictionHistoryViewer: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-sm"
+            disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -130,6 +133,7 @@ const PredictionHistoryViewer: React.FC = () => {
             step={1}
             value={[scoreRange[0], scoreRange[1]]}
             onValueChange={handleSliderChange}
+            disabled={isLoading}
           />
         </div>
         <div className="space-y-2">
@@ -140,12 +144,14 @@ const PredictionHistoryViewer: React.FC = () => {
               value={dateRange.from ? dateRange.from : ""}
               onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
               className="w-full"
+              disabled={isLoading}
             />
             <Input
               type="date"
               value={dateRange.to ? dateRange.to : ""}
               onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
               className="w-full"
+              disabled={isLoading}
             />
           </div>
         </div>
@@ -206,9 +212,24 @@ const PredictionHistoryViewer: React.FC = () => {
           </TableHeader>
           <TableBody>
             {isLoading ? (
+              Array(5).fill(0).map((_, i) => (
+                <TableRow key={`loading-${i}`}>
+                  <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-12" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                </TableRow>
+              ))
+            ) : error ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  Loading prediction data...
+                  <div className="flex flex-col items-center justify-center text-destructive">
+                    <AlertTriangle className="h-6 w-6 mb-2" />
+                    <p>Error loading prediction data</p>
+                    <p className="text-sm text-muted-foreground">{error}</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : predictions.length === 0 ? (

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
 
 // Define the prediction type
 interface Prediction {
@@ -27,6 +28,7 @@ export function usePredictionHistory() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
   const [dateRange, setDateRange] = useState<DateRange>({});
@@ -40,51 +42,36 @@ export function usePredictionHistory() {
   
   const { toast } = useToast();
 
-  // Generate mock data for demonstration purposes
-  // This would be replaced by a Supabase query once integrated
-  const generateMockPredictions = (): Prediction[] => {
-    const companies = ["Acme Corp", "Globex", "Initech", "Massive Dynamic", "Stark Industries"];
-    const industries = ["Technology", "Healthcare", "Finance", "Manufacturing", "Retail"];
-    const stages = ["Discovery", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"];
-    const classifications = ["High Value", "Medium Value", "Low Value", "Strategic"];
-    
-    return Array(25).fill(0).map((_, i) => {
-      const daysAgo = Math.floor(Math.random() * 30);
-      const predictedDate = new Date();
-      predictedDate.setDate(predictedDate.getDate() - daysAgo);
-      
-      return {
-        lead_name: `Lead ${i + 1}`,
-        company: companies[Math.floor(Math.random() * companies.length)],
-        deal_amount: Math.floor(Math.random() * 100000) + 10000,
-        lead_score: Math.floor(Math.random() * 100),
-        classification: classifications[Math.floor(Math.random() * classifications.length)],
-        predicted_at: predictedDate.toISOString(),
-        gpt_summary: `This lead from ${companies[Math.floor(Math.random() * companies.length)]} shows ${Math.random() > 0.5 ? "strong" : "moderate"} engagement with our product. Based on their interaction patterns and company profile, they appear to be a ${Math.random() > 0.5 ? "good" : "potential"} fit for our solutions.`,
-        industry: industries[Math.floor(Math.random() * industries.length)],
-        stage: stages[Math.floor(Math.random() * stages.length)],
-        engagement_score: Math.floor(Math.random() * 10) + 1,
-      };
-    });
-  };
-
-  // Fetch predictions on component mount
+  // Fetch predictions from Supabase
   useEffect(() => {
-    // In a real implementation, this would be a Supabase query
     const fetchPredictions = async () => {
       setIsLoading(true);
+      setError(null);
+      
       try {
-        // Mock data for now
-        const mockData = generateMockPredictions();
-        setAllPredictions(mockData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching predictions:", error);
+        const { data, error } = await supabase
+          .from('lead_predictions')
+          .select('*')
+          .order('predicted_at', { ascending: false });
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        if (data) {
+          setAllPredictions(data as Prediction[]);
+        } else {
+          setAllPredictions([]);
+        }
+      } catch (err) {
+        console.error("Error fetching predictions:", err);
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
         toast({
           title: "Error",
           description: "Failed to fetch prediction history.",
           variant: "destructive",
         });
+      } finally {
         setIsLoading(false);
       }
     };
@@ -185,21 +172,45 @@ export function usePredictionHistory() {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
       
-      // For demo purposes, let's update the prediction with new data
-      const newScore = Math.floor(Math.random() * 100);
-      const updatedPrediction = {
-        ...prediction,
-        lead_score: newScore,
-        predicted_at: new Date().toISOString(),
-      };
+      // Get the response data
+      const newPredictionData = await response.json();
       
-      // Update predictions
-      setAllPredictions(prev => 
-        prev.map(p => p.lead_name === prediction.lead_name ? updatedPrediction : p)
-      );
+      // Update the prediction in Supabase
+      const { error: updateError } = await supabase
+        .from('lead_predictions')
+        .update({
+          lead_score: newPredictionData.lead_score || prediction.lead_score,
+          predicted_at: new Date().toISOString(),
+          classification: newPredictionData.classification || prediction.classification
+        })
+        .eq('lead_name', prediction.lead_name);
+        
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
       
-      // Update selected prediction
-      setSelectedPrediction(updatedPrediction);
+      // Refresh the data
+      const { data: refreshedData, error: refreshError } = await supabase
+        .from('lead_predictions')
+        .select('*')
+        .order('predicted_at', { ascending: false });
+        
+      if (refreshError) {
+        throw new Error(refreshError.message);
+      }
+      
+      if (refreshedData) {
+        setAllPredictions(refreshedData as Prediction[]);
+      }
+      
+      // Find the updated prediction to select
+      const updatedPrediction = refreshedData?.find(
+        (p: Prediction) => p.lead_name === prediction.lead_name
+      ) as Prediction;
+      
+      if (updatedPrediction) {
+        setSelectedPrediction(updatedPrediction);
+      }
       
       toast({
         title: "Success",
@@ -294,6 +305,7 @@ export function usePredictionHistory() {
     sortOrder,
     setSortOrder,
     isLoading,
+    error,
     currentPage,
     setCurrentPage,
     totalPages,
