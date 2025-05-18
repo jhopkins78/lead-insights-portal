@@ -72,7 +72,7 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
     
     setIsLoading(true);
     try {
-      const response = await fetch("https://your-backend-url.com/leads/predict", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/predict`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
