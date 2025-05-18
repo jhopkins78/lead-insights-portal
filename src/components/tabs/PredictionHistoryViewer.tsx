@@ -89,6 +89,11 @@ const PredictionHistoryViewer: React.FC = () => {
     }
   };
 
+  // Handle slider value change with type conversion
+  const handleSliderChange = (value: number[]) => {
+    setScoreRange([value[0], value[1]] as [number, number]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -123,8 +128,8 @@ const PredictionHistoryViewer: React.FC = () => {
             min={0}
             max={100}
             step={1}
-            value={scoreRange}
-            onValueChange={setScoreRange}
+            value={[scoreRange[0], scoreRange[1]]}
+            onValueChange={handleSliderChange}
           />
         </div>
         <div className="space-y-2">
