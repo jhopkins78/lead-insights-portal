@@ -1,11 +1,11 @@
 
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
 
-type Product = "lead-commander" | "samaritan-ai" | "startup-advisor" | "retail-insights";
+type ProductId = "lead-commander" | "samaritan-ai" | "startup-advisor" | "retail-advisor";
 
 interface ProductContextType {
-  selectedProduct: Product;
-  setSelectedProduct: (product: Product) => void;
+  selectedProduct: ProductId;
+  setSelectedProduct: (product: ProductId) => void;
 }
 
 const defaultContext: ProductContextType = {
@@ -20,7 +20,7 @@ interface ProductProviderProps {
 }
 
 export const ProductProvider: React.FC<ProductProviderProps> = ({ children }) => {
-  const [selectedProduct, setSelectedProduct] = useState<Product>("lead-commander");
+  const [selectedProduct, setSelectedProduct] = useState<ProductId>("lead-commander");
 
   return (
     <ProductContext.Provider value={{ selectedProduct, setSelectedProduct }}>

@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+
+import { useState, useCallback, useContext } from "react";
 import {
   BarChart4,
   Brain,
@@ -17,13 +18,42 @@ import {
   FlaskRound,
   Sparkles
 } from "lucide-react";
-import { DashboardState } from "@/types/dashboard";
+import { DashboardState, Product, SamaritanGroup } from "@/types/dashboard";
+import { ProductContext } from "@/contexts/ProductContext";
 
 export default function useDashboardState(): DashboardState {
+  const { selectedProduct, setSelectedProduct } = useContext(ProductContext);
   const [activeTab, setActiveTab] = useState("insight");
   const [activePage, setActivePage] = useState("lead-intelligence");
   const [isSamaritanAI, setIsSamaritanAI] = useState(false);
-  const [activeSamaritanGroup, setActiveSamaritanGroup] = useState("group1");
+  const [activeSamaritanGroup, setActiveSamaritanGroup] = useState("data-exploration");
+
+  // Define products
+  const products: Product[] = [
+    { id: "lead-commander", name: "Lead Commander" },
+    { id: "samaritan-ai", name: "Samaritan AI" },
+    { id: "startup-advisor", name: "Startup Advisor (Coming Soon)" },
+    { id: "retail-advisor", name: "Retail Insights (Coming Soon)" }
+  ];
+
+  // Define Samaritan AI groups
+  const samaritanGroups: SamaritanGroup[] = [
+    { id: "data-exploration", name: "Data Exploration" },
+    { id: "modeling-evaluation", name: "Modeling & Evaluation" },
+    { id: "forecasting-simulation", name: "Forecasting & Simulation" },
+    { id: "reporting-insights", name: "Reporting & Insights" }
+  ];
+
+  // Get the current product
+  const currentProduct = products.find(p => p.id === (selectedProduct || "lead-commander")) || products[0];
+
+  // Define available pages based on the current product
+  const availablePages = (() => {
+    if (currentProduct.id === "samaritan-ai") {
+      return samaritanGroups.map(group => group.id);
+    }
+    return ["lead-intelligence", "predictive-analysis", "system-settings", "data-intelligence"];
+  })();
 
   // Define all available tabs with their metadata
   const tabInfo = {
@@ -57,6 +87,8 @@ export default function useDashboardState(): DashboardState {
         return ["auto", "strategy", "pipeline"];
       case "system-settings":
         return ["metrics", "automation", "coaching", "console"];
+      case "data-intelligence":
+        return ["uploader", "eda", "modelBuilder", "modelEval", "report"];
       default:
         return [];
     }
@@ -65,10 +97,14 @@ export default function useDashboardState(): DashboardState {
   // Get tabs for a specific Samaritan AI group
   const getTabsForGroup = useCallback((group: string): string[] => {
     switch (group) {
-      case "data-intelligence":
-        return ["uploader", "eda", "modelBuilder", "modelEval", "report"];
-      case "business-forecasting":
+      case "data-exploration":
+        return ["uploader", "eda"];
+      case "modeling-evaluation":
+        return ["modelBuilder", "modelEval"];
+      case "forecasting-simulation":
         return ["forecaster", "scenario"];
+      case "reporting-insights":
+        return ["report"];
       default:
         return [];
     }
@@ -83,6 +119,40 @@ export default function useDashboardState(): DashboardState {
     }
   }, [isSamaritanAI, activePage, activeSamaritanGroup, getTabsForPage, getTabsForGroup]);
 
+  // Handle product change
+  const handleProductChange = useCallback((productId: string) => {
+    setSelectedProduct(productId as any);
+    
+    const newProduct = products.find(p => p.id === productId);
+    if (newProduct) {
+      setIsSamaritanAI(newProduct.id === "samaritan-ai");
+      if (newProduct.id === "samaritan-ai") {
+        setActiveSamaritanGroup("data-exploration");
+      } else {
+        setActivePage("lead-intelligence");
+        setActiveTab("insight");
+      }
+    }
+  }, [products, setSelectedProduct]);
+
+  // Handle page change
+  const handlePageChange = useCallback((page: string) => {
+    setActivePage(page);
+    const tabsForPage = getTabsForPage(page);
+    if (tabsForPage.length > 0 && !tabsForPage.includes(activeTab)) {
+      setActiveTab(tabsForPage[0]);
+    }
+  }, [activeTab, getTabsForPage]);
+
+  // Handle Samaritan group change
+  const handleSamaritanGroupChange = useCallback((groupId: string) => {
+    setActiveSamaritanGroup(groupId);
+    const tabsForGroup = getTabsForGroup(groupId);
+    if (tabsForGroup.length > 0 && !tabsForGroup.includes(activeTab)) {
+      setActiveTab(tabsForGroup[0]);
+    }
+  }, [activeTab, getTabsForGroup]);
+
   return {
     activeTab,
     setActiveTab,
@@ -96,5 +166,12 @@ export default function useDashboardState(): DashboardState {
     getTabsForPage,
     getTabsForGroup,
     shouldShowTab,
+    products,
+    samaritanGroups,
+    currentProduct,
+    availablePages,
+    handleProductChange,
+    handlePageChange,
+    handleSamaritanGroupChange
   };
 }
