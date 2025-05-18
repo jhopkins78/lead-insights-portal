@@ -19,6 +19,7 @@ import ModelEvaluator from "@/components/tabs/ModelEvaluator";
 import ReportComposer from "@/components/tabs/ReportComposer";
 import BusinessForecaster from "@/components/tabs/BusinessForecaster";
 import ScenarioPlanner from "@/components/tabs/ScenarioPlanner";
+import PredictionHistoryViewer from "@/components/tabs/PredictionHistoryViewer";
 
 const DashboardTabContent: React.FC = () => {
   return (
@@ -55,6 +56,9 @@ const DashboardTabContent: React.FC = () => {
       </TabsContent>
       <TabsContent value="console" className="mt-0">
         <AgentConsole />
+      </TabsContent>
+      <TabsContent value="predictions" className="mt-0">
+        <PredictionHistoryViewer />
       </TabsContent>
       
       {/* Samaritan AI - Data Intelligence Suite Tab Contents */}

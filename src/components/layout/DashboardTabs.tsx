@@ -31,7 +31,7 @@ const DashboardTabs: React.FC<DashboardTabsProps> = ({
                style={{ 
                  gridTemplateColumns: `repeat(${
                    isSamaritanAI ? getTabsForGroup(activeSamaritanGroup).length :
-                   activePage === "lead-intelligence" ? 4 : 
+                   activePage === "lead-intelligence" ? 5 : // Updated to include predictions tab
                    activePage === "predictive-analysis" ? 3 : 
                    activePage === "system-settings" ? 4 : 1
                  }, minmax(0, 1fr))`
