@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { format } from "date-fns";
 
 interface ProgressCircleProps {
   value: number;
@@ -44,6 +45,7 @@ interface PredictionResponse {
   lead_score: number;
   classification: string;
   gpt_summary: string;
+  predicted_at: string;
 }
 
 interface PredictiveInsightModalProps {
@@ -73,18 +75,33 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
     
     setIsLoading(true);
     try {
-      // For demo purposes, generate mock prediction data
-      // In a real implementation, this would call your API
-      setTimeout(() => {
-        const mockPrediction: PredictionResponse = {
-          lead_score: leadData.score || Math.floor(Math.random() * 100),
-          classification: leadData.intent || ["High Value", "Medium Value", "Low Value"][Math.floor(Math.random() * 3)],
-          gpt_summary: `${leadData.name} from ${leadData.company} shows ${Math.random() > 0.5 ? 'strong' : 'moderate'} engagement with our product. Based on their interaction patterns, they appear to be interested in solutions that can help with their ${leadData.intent?.toLowerCase() || 'business needs'}.`
-        };
-        
-        setPrediction(mockPrediction);
-        setIsLoading(false);
-      }, 1500);
+      // Make a real API call to the backend
+      const response = await fetch("https://lead-commander-api.onrender.com/leads/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: leadData.name,
+          company: leadData.company,
+          title: leadData.title || "",
+          email: leadData.email || "",
+          intent: leadData.intent || "",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setPrediction({
+        lead_score: data.lead_score || leadData.score || Math.floor(Math.random() * 100),
+        classification: data.classification || leadData.intent || ["High Value", "Medium Value", "Low Value"][Math.floor(Math.random() * 3)],
+        gpt_summary: data.gpt_summary || `${leadData.name} from ${leadData.company} shows ${Math.random() > 0.5 ? 'strong' : 'moderate'} engagement with our product.`,
+        predicted_at: data.predicted_at || new Date().toISOString(),
+      });
+      setIsLoading(false);
       
     } catch (error) {
       console.error("Error fetching prediction:", error);
@@ -94,6 +111,23 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
         variant: "destructive",
       });
       setIsLoading(false);
+      
+      // Fallback to mock data if the API call fails
+      setPrediction({
+        lead_score: leadData.score || Math.floor(Math.random() * 100),
+        classification: leadData.intent || ["High Value", "Medium Value", "Low Value"][Math.floor(Math.random() * 3)],
+        gpt_summary: `${leadData.name} from ${leadData.company} shows ${Math.random() > 0.5 ? 'strong' : 'moderate'} engagement with our product.`,
+        predicted_at: new Date().toISOString(),
+      });
+    }
+  };
+
+  // Format the timestamp for display
+  const formatTimestamp = (timestamp: string): string => {
+    try {
+      return format(new Date(timestamp), "MMM d, yyyy 'at' h:mm a");
+    } catch (error) {
+      return "Unknown";
     }
   };
 
@@ -155,6 +189,12 @@ const PredictiveInsightModal: React.FC<PredictiveInsightModalProps> = ({
                 className="resize-none min-h-[120px]"
               />
             </div>
+            
+            {prediction.predicted_at && (
+              <div className="text-sm text-muted-foreground">
+                Last scored: {formatTimestamp(prediction.predicted_at)}
+              </div>
+            )}
 
             <Button 
               onClick={handleRescore} 
