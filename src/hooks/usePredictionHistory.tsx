@@ -1,34 +1,68 @@
 
-import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { useState } from "react";
+import { usePredictionData } from "./prediction/usePredictionData";
+import { usePredictionFilters } from "./prediction/usePredictionFilters";
+import { usePredictionSort } from "./prediction/usePredictionSort";
+import { usePredictionPagination } from "./prediction/usePredictionPagination";
+import { usePredictionActions } from "./prediction/usePredictionActions";
 
 export const usePredictionHistory = () => {
-  const [predictions, setPredictions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use the data hook for fetching predictions
+  const { allPredictions, isLoading, error, refetchPredictions } = usePredictionData();
+  
+  // Use the filters hook
+  const { filters, setSearchQuery, setScoreRange, setDateRange, filteredPredictions } = 
+    usePredictionFilters(allPredictions);
+  
+  // Use the sort hook
+  const { sort, sortedPredictions, handleSort } = usePredictionSort(filteredPredictions);
+  
+  // Use the pagination hook
+  const { pagination, setCurrentPage, paginatedPredictions } = 
+    usePredictionPagination(sortedPredictions);
+  
+  // Use the actions hook
+  const { 
+    selectedPrediction, 
+    setSelectedPrediction,
+    isModalOpen,
+    setIsModalOpen,
+    isActionLoading,
+    handleRescorePrediction,
+    handleExportCSV,
+    navigateToLeadExplorer
+  } = usePredictionActions(allPredictions, refetchPredictions);
+  
+  // Handle slider changes
+  const handleSliderChange = (values: number[]) => {
+    if (values.length === 2) {
+      setScoreRange([values[0], values[1]]);
+    }
+  };
 
-  useEffect(() => {
-    const fetchPredictions = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("lead_predictions")
-        .select("*")
-        .order("predicted_at", { ascending: false });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setPredictions(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchPredictions();
-  }, []);
-
-  return { predictions, loading, error };
+  return {
+    // Expose all required properties and methods
+    predictions: paginatedPredictions,
+    searchQuery: filters.searchQuery,
+    setSearchQuery,
+    scoreRange: filters.scoreRange,
+    handleSliderChange,
+    dateRange: filters.dateRange,
+    setDateRange,
+    handleSort,
+    sortColumn: sort.column,
+    sortOrder: sort.order,
+    isLoading,
+    error,
+    currentPage: pagination.currentPage,
+    setCurrentPage,
+    totalPages: pagination.totalPages,
+    selectedPrediction,
+    setSelectedPrediction,
+    isModalOpen,
+    setIsModalOpen,
+    handleRescorePrediction,
+    handleExportCSV,
+    navigateToLeadExplorer,
+  };
 };

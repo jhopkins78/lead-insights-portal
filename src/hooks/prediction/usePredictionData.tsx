@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabaseClient";
 import { Prediction } from "@/components/prediction-history/types";
+import { fetchPredictions } from "@/services/predictionService";
 
 export function usePredictionData() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -10,27 +10,15 @@ export function usePredictionData() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Fetch predictions from Supabase
+  // Fetch predictions using our service
   useEffect(() => {
-    const fetchPredictions = async () => {
+    const loadPredictions = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        const { data, error } = await supabase
-          .from('lead_predictions')
-          .select('*')
-          .order('predicted_at', { ascending: false });
-        
-        if (error) {
-          throw new Error(error.message);
-        }
-        
-        if (data) {
-          setPredictions(data as Prediction[]);
-        } else {
-          setPredictions([]);
-        }
+        const data = await fetchPredictions();
+        setPredictions(data);
       } catch (err) {
         console.error("Error fetching predictions:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -44,7 +32,7 @@ export function usePredictionData() {
       }
     };
 
-    fetchPredictions();
+    loadPredictions();
   }, [toast]);
 
   // Refetch predictions (useful after operations like re-scoring)
@@ -53,18 +41,8 @@ export function usePredictionData() {
     setError(null);
     
     try {
-      const { data, error } = await supabase
-        .from('lead_predictions')
-        .select('*')
-        .order('predicted_at', { ascending: false });
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      if (data) {
-        setPredictions(data as Prediction[]);
-      }
+      const data = await fetchPredictions();
+      setPredictions(data);
     } catch (err) {
       console.error("Error refetching predictions:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");

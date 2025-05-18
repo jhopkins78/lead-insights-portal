@@ -1,8 +1,8 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabaseClient";
 import { Prediction } from "@/components/prediction-history/types";
+import { rescorePrediction, getPredictionByName } from "@/services/predictionService";
 
 export function usePredictionActions(allPredictions: Prediction[], refetchPredictions: () => Promise<void>) {
   const [selectedPrediction, setSelectedPrediction] = useState<Prediction | null>(null);
@@ -10,60 +10,18 @@ export function usePredictionActions(allPredictions: Prediction[], refetchPredic
   const [isActionLoading, setIsActionLoading] = useState(false);
   const { toast } = useToast();
 
-  // Handle re-scoring a prediction
+  // Handle re-scoring a prediction using our service
   const handleRescorePrediction = async (prediction: Prediction) => {
     setIsActionLoading(true);
     try {
-      // In a real implementation, this would call your API
-      const response = await fetch("https://lead-commander-api.onrender.com/leads/predict", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: prediction.lead_name,
-          company: prediction.company,
-          deal_amount: prediction.deal_amount,
-          engagement_score: prediction.engagement_score,
-          industry: prediction.industry,
-          stage: prediction.stage,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      
-      // Get the response data
-      const newPredictionData = await response.json();
-      
-      // Update the prediction in Supabase
-      const { error: updateError } = await supabase
-        .from('lead_predictions')
-        .update({
-          lead_score: newPredictionData.lead_score || prediction.lead_score,
-          predicted_at: new Date().toISOString(),
-          classification: newPredictionData.classification || prediction.classification
-        })
-        .eq('lead_name', prediction.lead_name);
-        
-      if (updateError) {
-        throw new Error(updateError.message);
-      }
+      await rescorePrediction(prediction);
       
       // Refresh the data
       await refetchPredictions();
       
-      // Find the updated prediction to select
-      const { data: refreshedData } = await supabase
-        .from('lead_predictions')
-        .select('*')
-        .eq('lead_name', prediction.lead_name)
-        .single();
-      
-      if (refreshedData) {
-        setSelectedPrediction(refreshedData as Prediction);
-      }
+      // Get the updated prediction
+      const refreshedData = await getPredictionByName(prediction.lead_name);
+      setSelectedPrediction(refreshedData);
       
       toast({
         title: "Success",
