@@ -85,12 +85,21 @@ export const generateInsight = async (input: string): Promise<InsightResponse> =
 
 export const analyzeLead = async (leadData: LeadAnalysisRequest): Promise<LeadAnalysisResponse> => {
   try {
+    // Map our internal LeadAnalysisRequest structure to what the API expects
+    const apiRequestBody = {
+      lead_name: leadData.name,
+      job_title: leadData.title,
+      email: leadData.email,
+      company: leadData.company,
+      intent: leadData.intent
+    };
+
     const response = await fetch(`${API_BASE_URL}/leads/analyze`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(leadData),
+      body: JSON.stringify(apiRequestBody),
     });
 
     if (!response.ok) {

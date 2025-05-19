@@ -45,16 +45,42 @@ const LeadAnalyzer: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const data = await analyzeLead(formData);
+      // Set the API base URL to the render.com URL for testing
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://retool-dashboard.onrender.com";
+      
+      // Map our internal structure to what the API expects
+      const apiRequestBody = {
+        lead_name: formData.name,
+        job_title: formData.title,
+        email: formData.email,
+        company: formData.company,
+        intent: formData.intent
+      };
+      
+      // Use fetch directly for testing
+      const response = await fetch(`${apiUrl}/leads/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiRequestBody),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
       setResult(data);
       toast({
         title: "Lead analyzed",
         description: "Lead analysis has been completed successfully.",
       });
     } catch (error) {
+      console.error("Error analyzing lead:", error);
       toast({
         title: "Error",
-        description: "Failed to analyze lead. Please try again.",
+        description: `Failed to analyze lead: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       });
     } finally {
