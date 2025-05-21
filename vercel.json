@@ -8,6 +8,8 @@
       { "source": "/(.*)", "destination": "/" }
     ],
     "env": {
-      "VITE_API_BASE_URL": "https://retool-dashboard.onrender.com"
+      "VITE_API_BASE_URL": "https://retool-dashboard.onrender.com",
+      "VITE_SUPABASE_URL": "https://wyixbyciazhcaiwcqpqn.supabase.co",
+      "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5aXhieWNpYXpoY2Fpd2NxcHFuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzE2MjQ2NSwiZXhwIjoyMDYyNzM4NDY1fQ.bqdfG408pMU-WmcyNqOusJZYDLghoxXRsTTAxaVPc20"
     }
   }

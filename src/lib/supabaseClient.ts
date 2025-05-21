@@ -1,29 +1,25 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Default values for development - replace these with your actual Supabase project values
-const FALLBACK_URL = "https://example.supabase.co";
-const FALLBACK_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
-
-// Try to get values from environment variables first
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_KEY;
-
-// Create a mock Supabase client if credentials are using fallbacks
-const usingFallbacks = supabaseUrl === FALLBACK_URL || supabaseKey === FALLBACK_KEY;
+// Use the provided Supabase credentials
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://wyixbyciazhcaiwcqpqn.supabase.co";
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5aXhieWNpYXpoY2Fpd2NxcHFuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzE2MjQ2NSwiZXhwIjoyMDYyNzM4NDY1fQ.bqdfG408pMU-WmcyNqOusJZYDLghoxXRsTTAxaVPc20";
 
 // Create and export the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Check if we're using the actual credentials or fallbacks
+const isConfigured = true; // We've hardcoded the actual credentials
+
 // Log appropriate message based on credential status
-if (usingFallbacks) {
+if (isConfigured) {
+  console.info("Supabase client initialized successfully");
+} else {
   console.warn(
     "Using fallback Supabase credentials. Most operations will fail. " +
     "Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables."
   );
-} else {
-  console.info("Supabase client initialized successfully");
 }
 
 // Helper function to check if Supabase is properly configured
-export const isSupabaseConfigured = () => !usingFallbacks;
+export const isSupabaseConfigured = () => isConfigured;
