@@ -10,16 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FileUploader } from "@/components/ui/file-uploader";
 import { Loader2 } from "lucide-react";
-import { ProcessingStatus } from "../EdaExplorer";
-
-interface FileUploadDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onFilesSelected: (files: File[]) => void;
-  onProcessFiles: () => void;
-  files: File[];
-  processing: boolean;
-}
+import { FileUploadDialogProps } from "./types";
 
 const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   open,
