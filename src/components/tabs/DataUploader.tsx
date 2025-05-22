@@ -159,6 +159,37 @@ const DataUploader: React.FC = () => {
     }
   };
 
+  // Helper function to determine the status for a pipeline stage
+  const getStageStatus = (currentStage: ProcessingStage, checkStage: string): ProcessingStage => {
+    // If we're at this stage or failed, show the current status
+    if (currentStage === checkStage || currentStage === "failed") {
+      return currentStage;
+    }
+    
+    // If we're past this stage (completed or at a later stage), mark as completed
+    if (currentStage === "completed") {
+      return "completed";
+    }
+    
+    // Define stage sequence for determining progress
+    const stageSequence = ["uploading", "extraction", "transformation", "loading", "completed"];
+    const currentIndex = stageSequence.indexOf(currentStage);
+    const checkIndex = stageSequence.indexOf(checkStage);
+    
+    // If current stage is further in the sequence than the check stage, it's completed
+    if (currentIndex > checkIndex && currentIndex !== -1 && checkIndex !== -1) {
+      return "completed";
+    }
+    
+    // If current stage is earlier in the sequence, show it as the current active stage
+    if (currentStage !== "idle" && currentIndex !== -1) {
+      return "uploading";
+    }
+    
+    // Default case (idle or unknown)
+    return "idle";
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -220,22 +251,22 @@ const DataUploader: React.FC = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "uploading" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "uploading" ? processing : (processing === "completed" || processing === "extraction" || processing === "transformation" || processing === "loading") ? "completed" : "idle")}
+                      {getStatusIcon(getStageStatus(processing, "uploading"))}
                       <span>File Upload</span>
                     </div>
                     
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "extraction" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "extraction" ? processing : (processing === "completed" || processing === "transformation" || processing === "loading") ? "completed" : (processing === "uploading" ? "uploading" : "idle"))}
+                      {getStatusIcon(getStageStatus(processing, "extraction"))}
                       <span>Data Extraction</span>
                     </div>
                     
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "transformation" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "transformation" ? processing : (processing === "completed" || processing === "loading") ? "completed" : (processing === "extraction" || processing === "uploading" ? "uploading" : "idle"))}
+                      {getStatusIcon(getStageStatus(processing, "transformation"))}
                       <span>Data Transformation</span>
                     </div>
                     
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "loading" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "loading" ? processing : processing === "completed" ? "completed" : (processing === "transformation" || processing === "extraction" || processing === "uploading" ? "uploading" : "idle"))}
+                      {getStatusIcon(getStageStatus(processing, "loading"))}
                       <span>Database Loading</span>
                     </div>
                   </div>
