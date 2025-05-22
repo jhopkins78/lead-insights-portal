@@ -1,4 +1,5 @@
 
+import React from "react";
 import { FileJson, FileText, FileArchive } from "lucide-react";
 import { AcceptedFileType } from "./types";
 
