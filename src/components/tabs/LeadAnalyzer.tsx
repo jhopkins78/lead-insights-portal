@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,33 +44,9 @@ const LeadAnalyzer: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Set the API base URL to the render.com URL for testing
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://retool-dashboard.onrender.com";
-      
-      // Map our internal structure to what the API expects
-      const apiRequestBody = {
-        lead_name: formData.name,
-        job_title: formData.title,
-        email: formData.email,
-        company: formData.company,
-        intent: formData.intent
-      };
-      
-      // Use fetch directly for testing
-      const response = await fetch(`${apiUrl}/leads/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(apiRequestBody),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setResult(data);
+      // Use the analyzeLead function from our API service
+      const result = await analyzeLead(formData);
+      setResult(result);
       toast({
         title: "Lead analyzed",
         description: "Lead analysis has been completed successfully.",

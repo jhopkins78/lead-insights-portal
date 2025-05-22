@@ -73,7 +73,8 @@ export const generateInsight = async (input: string): Promise<InsightResponse> =
     });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
     }
 
     return await response.json();
@@ -94,6 +95,9 @@ export const analyzeLead = async (leadData: LeadAnalysisRequest): Promise<LeadAn
       intent: leadData.intent
     };
 
+    console.log("Sending lead data to API:", apiRequestBody);
+    console.log("API URL:", `${API_BASE_URL}/leads/analyze`);
+
     const response = await fetch(`${API_BASE_URL}/leads/analyze`, {
       method: "POST",
       headers: {
@@ -103,10 +107,13 @@ export const analyzeLead = async (leadData: LeadAnalysisRequest): Promise<LeadAn
     });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log("API response:", data);
+    return data;
   } catch (error) {
     console.error("Failed to analyze lead:", error);
     throw error;
@@ -124,7 +131,8 @@ export const estimateLtv = async (ltvData: LtvEstimateRequest): Promise<LtvEstim
     });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
     }
 
     return await response.json();
