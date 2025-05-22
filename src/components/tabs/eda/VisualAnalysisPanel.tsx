@@ -1,8 +1,12 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, BarChart2, LineChart, HeatMap } from "lucide-react";
+import {
+  BarChart,
+  BarChart2,
+  LineChart,
+  Grid
+} from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart as RechartsBarChart,
@@ -90,7 +94,7 @@ const VisualAnalysisPanel: React.FC<VisualAnalysisPanelProps> = ({ data }) => {
             <span>Time Series</span>
           </TabsTrigger>
           <TabsTrigger value="correlation" className="flex gap-2 items-center">
-            <HeatMap className="h-4 w-4" />
+            <Grid className="h-4 w-4" />
             <span>Correlation</span>
           </TabsTrigger>
         </TabsList>
