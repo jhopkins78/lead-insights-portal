@@ -32,7 +32,7 @@ const Login = () => {
       
       // Redirect to dashboard after successful login
       setTimeout(() => {
-        navigate("/");
+        navigate("/dashboard");
       }, 1000);
     } else {
       toast({
