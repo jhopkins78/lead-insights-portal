@@ -20,6 +20,7 @@ import ReportComposer from "@/components/tabs/ReportComposer";
 import BusinessForecaster from "@/components/tabs/BusinessForecaster";
 import ScenarioPlanner from "@/components/tabs/ScenarioPlanner";
 import PredictionHistoryViewer from "@/components/tabs/PredictionHistoryViewer";
+import QuarterlyReports from "@/components/tabs/QuarterlyReports";
 
 const DashboardTabContent: React.FC = () => {
   return (
@@ -50,6 +51,9 @@ const DashboardTabContent: React.FC = () => {
       </TabsContent>
       <TabsContent value="metrics" className="mt-0 pt-2">
         <ModelMetrics />
+      </TabsContent>
+      <TabsContent value="reports" className="mt-0 pt-2">
+        <QuarterlyReports />
       </TabsContent>
       
       {/* System Settings tabs */}
@@ -93,4 +97,3 @@ const DashboardTabContent: React.FC = () => {
 };
 
 export default DashboardTabContent;
-

@@ -16,7 +16,8 @@ import {
   Users,
   Zap,
   FlaskRound,
-  Sparkles
+  Sparkles,
+  FileText
 } from "lucide-react";
 import { DashboardState, Product, SamaritanGroup } from "@/types/dashboard";
 import { ProductContext } from "@/contexts/ProductContext";
@@ -66,6 +67,7 @@ export default function useDashboardState(): DashboardState {
     strategy: { icon: Sparkles, title: "Strategy Scanner", shortTitle: "Strategy" },
     pipeline: { icon: LineChart, title: "Pipeline Optimizer", shortTitle: "Pipeline" },
     metrics: { icon: BarChart4, title: "Model Metrics", shortTitle: "Metrics" },
+    reports: { icon: FileText, title: "Quarterly Reports", shortTitle: "Reports" },
     automation: { icon: Zap, title: "Action Automation", shortTitle: "Actions" },
     coaching: { icon: FlaskRound, title: "Coaching Generator", shortTitle: "Coach" },
     console: { icon: Brain, title: "Agent Console", shortTitle: "Console" },
@@ -84,7 +86,7 @@ export default function useDashboardState(): DashboardState {
       case "lead-intelligence":
         return ["insight", "lead", "explorer", "ltv", "predictions"];
       case "predictive-analysis":
-        return ["auto", "strategy", "pipeline"];
+        return ["auto", "strategy", "pipeline", "reports"];
       case "system-settings":
         return ["metrics", "automation", "coaching", "console"];
       case "data-intelligence":
