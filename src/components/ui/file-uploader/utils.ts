@@ -17,8 +17,9 @@ export const getFileIcon = (fileName: string) => {
   const extension = fileName.split('.').pop()?.toLowerCase();
   
   switch(extension) {
-    case 'json':
+    case 'json': {
       return <FileJson className="h-5 w-5" />;
+    }
     case 'csv':
     case 'xls':
     case 'xlsx':
@@ -27,10 +28,12 @@ export const getFileIcon = (fileName: string) => {
     case 'docx':
     case 'md':
     case 'html':
-    case 'txt':
+    case 'txt': {
       return <FileText className="h-5 w-5" />;
-    default:
+    }
+    default: {
       return <FileArchive className="h-5 w-5" />;
+    }
   }
 };
 
