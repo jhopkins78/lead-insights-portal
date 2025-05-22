@@ -1,234 +1,207 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend,
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, BarChart2, LineChart, HeatMap } from "lucide-react";
+import {
   ResponsiveContainer,
-  LineChart,
-  Line
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  LineChart as RechartsLineChart,
+  Line,
+  Area,
+  AreaChart,
 } from "recharts";
+import { Badge } from "@/components/ui/badge";
 
 interface VisualAnalysisPanelProps {
   data: any;
 }
 
 const VisualAnalysisPanel: React.FC<VisualAnalysisPanelProps> = ({ data }) => {
-  // Format categorical data for charts
-  const formatCategoryData = (categoryKey: string) => {
-    if (!data?.categorical_counts?.[categoryKey]) return [];
-    
-    const { labels, values } = data.categorical_counts[categoryKey];
-    return labels.map((label: string, index: number) => ({
-      name: label,
-      value: values[index]
-    }));
-  };
-
-  // Format time series data
-  const formatTimeSeriesData = () => {
-    if (!data?.time_series) return [];
-    
-    const { dates, sales, growth } = data.time_series;
-    return dates.map((date: string, index: number) => ({
-      name: date,
-      sales: sales[index],
-      growth: growth[index]
-    }));
-  };
-
-  // Create heatmap data for correlation matrix
-  const renderCorrelationMatrix = () => {
-    if (!data?.correlation_matrix) return null;
-    
-    const { variables, values } = data.correlation_matrix;
-    const cellSize = 60;
-    const margin = 60;
-    const width = variables.length * cellSize + margin;
-    const height = variables.length * cellSize + margin;
-    
+  // If no visualization data is available
+  if (!data || !data.correlation_matrix || !data.categorical_counts || !data.time_series) {
     return (
-      <div className="overflow-auto">
-        <svg width={width} height={height}>
-          {/* Y-axis labels */}
-          {variables.map((variable: string, i: number) => (
-            <text 
-              key={`y-${i}`}
-              x={margin - 10} 
-              y={margin + i * cellSize + cellSize / 2}
-              textAnchor="end"
-              dominantBaseline="middle"
-              fontSize="12"
-            >
-              {variable}
-            </text>
-          ))}
-          
-          {/* X-axis labels */}
-          {variables.map((variable: string, i: number) => (
-            <text 
-              key={`x-${i}`}
-              x={margin + i * cellSize + cellSize / 2} 
-              y={margin - 10}
-              textAnchor="middle"
-              fontSize="12"
-            >
-              {variable}
-            </text>
-          ))}
-          
-          {/* Heatmap cells */}
-          {values.map((row: number[], i: number) => 
-            row.map((value: number, j: number) => {
-              // Color scale from blue (negative) to white (0) to red (positive)
-              const color = value < 0 
-                ? `rgb(${Math.floor(255 * (1 - Math.abs(value)))}, ${Math.floor(255 * (1 - Math.abs(value)))}, 255)`
-                : `rgb(255, ${Math.floor(255 * (1 - value))}, ${Math.floor(255 * (1 - value))})`;
-              
-              return (
-                <g key={`cell-${i}-${j}`}>
-                  <rect
-                    x={margin + j * cellSize}
-                    y={margin + i * cellSize}
-                    width={cellSize}
-                    height={cellSize}
-                    fill={color}
-                    stroke="#ddd"
-                  />
-                  <text
-                    x={margin + j * cellSize + cellSize / 2}
-                    y={margin + i * cellSize + cellSize / 2}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fill={Math.abs(value) > 0.7 ? "white" : "black"}
-                    fontSize="12"
-                  >
-                    {value.toFixed(2)}
-                  </text>
-                </g>
-              );
-            })
-          )}
-        </svg>
+      <div className="text-center p-12">
+        <p className="text-muted-foreground">No visualization data is available for this dataset.</p>
       </div>
     );
+  }
+
+  // Transform correlation matrix data for the heatmap
+  const correlationData = data.correlation_matrix.variables.map((variable: string, i: number) => {
+    const result: Record<string, any> = { name: variable };
+    data.correlation_matrix.variables.forEach((v: string, j: number) => {
+      result[v] = data.correlation_matrix.values[i][j];
+    });
+    return result;
+  });
+
+  // Get categorical data for bar charts
+  const categoryData = Object.entries(data.categorical_counts).map(([key, value]: [string, any]) => ({
+    name: key,
+    labels: value.labels,
+    values: value.values
+  }));
+
+  // Transform for selected category
+  const transformCategoryData = (category: any) => {
+    return category.labels.map((label: string, index: number) => ({
+      name: label,
+      value: category.values[index]
+    }));
+  };
+
+  const barChartData = categoryData.length > 0 ? transformCategoryData(categoryData[0][1]) : [];
+
+  // Create time series data
+  const timeSeriesData = data.time_series.dates.map((date: string, i: number) => ({
+    date,
+    sales: data.time_series.sales[i],
+    growth: data.time_series.growth[i]
+  }));
+
+  // Helper function to get color based on correlation value
+  const getCorrelationColor = (value: number) => {
+    if (value >= 0.7) return "#047857"; // Strong positive - emerald-700
+    if (value >= 0.4) return "#10B981"; // Moderate positive - emerald-500
+    if (value >= 0.2) return "#6EE7B7"; // Weak positive - emerald-300
+    if (value > -0.2) return "#D1D5DB"; // Negligible - gray-300
+    if (value > -0.4) return "#FCA5A5"; // Weak negative - rose-300
+    if (value > -0.7) return "#F87171"; // Moderate negative - rose-400
+    return "#EF4444"; // Strong negative - rose-600
   };
 
   return (
     <div className="space-y-6">
-      {data?.summary && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Dataset Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gray-50 p-4 rounded-md">
-                <div className="text-sm text-gray-500">Records</div>
-                <div className="text-2xl font-semibold">{data.summary.records.toLocaleString()}</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <div className="text-sm text-gray-500">Columns</div>
-                <div className="text-2xl font-semibold">{data.summary.columns}</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <div className="text-sm text-gray-500">Missing Data</div>
-                <div className="text-2xl font-semibold">{data.summary.missing_percentage}%</div>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <div className="text-sm text-gray-500">Data Types</div>
-                <div className="text-2xl font-semibold">
-                  {Object.values(data.summary.data_types).reduce((a: number, b: number) => a + b, 0)}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs defaultValue="distribution" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="distribution" className="flex gap-2 items-center">
+            <BarChart className="h-4 w-4" />
+            <span>Category Distribution</span>
+          </TabsTrigger>
+          <TabsTrigger value="timeseries" className="flex gap-2 items-center">
+            <LineChart className="h-4 w-4" />
+            <span>Time Series</span>
+          </TabsTrigger>
+          <TabsTrigger value="correlation" className="flex gap-2 items-center">
+            <HeatMap className="h-4 w-4" />
+            <span>Correlation</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {data?.categorical_counts?.category && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Category Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={formatCategoryData('category')}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" name="Count" fill="#4f46e5" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="distribution">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Category Distribution</span>
+                <Badge variant="outline">Top Categories</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart data={barChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="value" fill="#6366F1" name="Count" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {data?.time_series && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Trend Over Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formatTimeSeriesData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="sales" name="Sales" stroke="#4f46e5" activeDot={{ r: 8 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="growth" name="Growth %" stroke="#10b981" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="timeseries">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Sales & Growth Trends</span>
+                <Badge variant="outline">Quarterly Data</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsLineChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis yAxisId="left" orientation="left" />
+                    <YAxis yAxisId="right" orientation="right" />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="sales"
+                      stroke="#8884d8"
+                      name="Sales"
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="growth"
+                      stroke="#82ca9d"
+                      name="Growth %"
+                    />
+                  </RechartsLineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {data?.correlation_matrix && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Correlation Matrix</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderCorrelationMatrix()}
-          </CardContent>
-        </Card>
-      )}
-
-      {data?.categorical_counts?.region && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Regional Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={formatCategoryData('region')}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" name="Count" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="correlation">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Correlation Matrix</span>
+                <Badge variant="outline">Variable Relationships</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="p-2 border"></th>
+                      {data.correlation_matrix.variables.map((variable: string, i: number) => (
+                        <th key={i} className="p-2 border text-sm whitespace-nowrap">
+                          {variable}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {correlationData.map((row: any, i: number) => (
+                      <tr key={i}>
+                        <td className="p-2 border font-medium text-sm whitespace-nowrap">{row.name}</td>
+                        {data.correlation_matrix.variables.map((variable: string, j: number) => (
+                          <td
+                            key={j}
+                            className="p-2 border text-center"
+                            style={{ backgroundColor: getCorrelationColor(row[variable]) }}
+                          >
+                            {row[variable].toFixed(2)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
