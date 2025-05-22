@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUploader } from "@/components/ui/file-uploader";
@@ -143,7 +142,7 @@ const DataUploader: React.FC = () => {
     return new Promise(resolve => setTimeout(resolve, ms));
   };
 
-  // Render status indicator based on current processing stage
+  // Render status icon based on current processing stage
   const getStatusIcon = (stage: ProcessingStage) => {
     switch (stage) {
       case "uploading":
@@ -221,22 +220,22 @@ const DataUploader: React.FC = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "uploading" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "uploading" ? processing : processing === "completed" || processing === "extraction" || processing === "transformation" || processing === "loading" ? "completed" : "idle")}
+                      {getStatusIcon(processing === "uploading" ? processing : (processing === "completed" || processing === "extraction" || processing === "transformation" || processing === "loading") ? "completed" : "idle")}
                       <span>File Upload</span>
                     </div>
                     
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "extraction" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "extraction" ? processing : processing === "completed" || processing === "transformation" || processing === "loading" ? "completed" : "idle")}
+                      {getStatusIcon(processing === "extraction" ? processing : (processing === "completed" || processing === "transformation" || processing === "loading") ? "completed" : (processing === "uploading" ? "uploading" : "idle"))}
                       <span>Data Extraction</span>
                     </div>
                     
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "transformation" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "transformation" ? processing : processing === "completed" || processing === "loading" ? "completed" : "idle")}
+                      {getStatusIcon(processing === "transformation" ? processing : (processing === "completed" || processing === "loading") ? "completed" : (processing === "extraction" || processing === "uploading" ? "uploading" : "idle"))}
                       <span>Data Transformation</span>
                     </div>
                     
                     <div className={`flex items-center gap-2 p-2 rounded-md ${processing === "loading" ? "bg-insight-50" : ""}`}>
-                      {getStatusIcon(processing === "loading" ? processing : processing === "completed" ? "completed" : "idle")}
+                      {getStatusIcon(processing === "loading" ? processing : processing === "completed" ? "completed" : (processing === "transformation" || processing === "extraction" || processing === "uploading" ? "uploading" : "idle"))}
                       <span>Database Loading</span>
                     </div>
                   </div>
