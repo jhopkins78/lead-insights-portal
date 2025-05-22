@@ -52,7 +52,7 @@ const Login = () => {
       className="min-h-screen flex items-start justify-center pt-20 p-4"
       style={{
         background: `
-          linear-gradient(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15) 30%, rgba(255, 255, 255, 0.35) 70%), 
+          linear-gradient(to bottom, rgba(10, 31, 68, 0.95), rgba(20, 44, 102, 0.95)),
           url('/lovable-uploads/904e0440-68e1-4b14-a15d-d99c09e25bf5.png')
         `,
         backgroundSize: 'contain',
@@ -63,12 +63,12 @@ const Login = () => {
     >
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center">
-          {/* Removed the NOLADAD h1 text that was here */}
+          {/* Logo with subtle glow effect */}
           
-          {/* Increased margin-top even more to position the button lower */}
+          {/* Increased margin-top for button positioning */}
           {!showLoginForm && (
             <Button 
-              className="w-1/2 bg-insight-800 hover:bg-insight-900 text-white mt-[600px] shadow-lg shadow-insight-900/50"
+              className="w-1/2 bg-insight-800 hover:bg-[#4C6EF5] text-white mt-[600px] shadow-lg shadow-[#0A1F44]/50 transition-all duration-300"
               onClick={() => setShowLoginForm(true)}
             >
               Access Portal
@@ -83,7 +83,7 @@ const Login = () => {
             transition={{ duration: 0.3 }}
           >
             {/* Login Card with enhanced shadow */}
-            <Card className="shadow-2xl shadow-insight-900/40 border-insight-100 bg-white/90 backdrop-blur-sm">
+            <Card className="shadow-2xl shadow-[#0A1F44]/40 border-[#142C66] bg-white/90 backdrop-blur-sm">
               <CardHeader className="text-center">
                 <h2 className="text-xl font-semibold">Login to Your Account</h2>
               </CardHeader>
@@ -107,7 +107,7 @@ const Login = () => {
                       <Label htmlFor="password">Password</Label>
                       <a 
                         href="#" 
-                        className="text-xs text-insight-700 hover:text-insight-800"
+                        className="text-xs text-[#4C6EF5] hover:text-[#3859E9]"
                         onClick={(e) => {
                           e.preventDefault();
                           toast({
@@ -158,7 +158,7 @@ const Login = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-insight-800 hover:bg-insight-900 text-white"
+                    className="w-full bg-[#142C66] hover:bg-[#4C6EF5] text-white transition-colors duration-300"
                   >
                     Enter Your AI Workspace
                   </Button>
@@ -174,7 +174,7 @@ const Login = () => {
               <Button 
                 variant="outline" 
                 onClick={() => setShowLoginForm(false)}
-                className="text-insight-700"
+                className="text-[#4C6EF5] border-[#142C66]/30 hover:bg-[#142C66]/10"
               >
                 Back
               </Button>
