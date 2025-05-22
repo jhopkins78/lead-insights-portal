@@ -10,11 +10,13 @@ import { LeadAnalysisRequest, analyzeLead, LeadAnalysisResponse } from "@/servic
 interface LeadAnalyzerFormProps {
   onAnalysisComplete: (result: LeadAnalysisResponse) => void;
   onAnalysisError: (error: string) => void;
+  onFormDataCapture?: (formData: LeadAnalysisRequest) => void;
 }
 
 const LeadAnalyzerForm: React.FC<LeadAnalyzerFormProps> = ({ 
   onAnalysisComplete,
-  onAnalysisError
+  onAnalysisError,
+  onFormDataCapture
 }) => {
   const [formData, setFormData] = useState<LeadAnalysisRequest>({
     name: "",
@@ -45,6 +47,11 @@ const LeadAnalyzerForm: React.FC<LeadAnalyzerFormProps> = ({
         variant: "destructive",
       });
       return;
+    }
+
+    // Capture form data for retry functionality
+    if (onFormDataCapture) {
+      onFormDataCapture(formData);
     }
 
     setIsLoading(true);

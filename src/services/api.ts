@@ -61,6 +61,34 @@ export interface LtvEstimateRequest {
   repeat_purchases: number;
 }
 
+// Mock data for fallback when API is unavailable
+const MOCK_LEAD_ANALYSIS: LeadAnalysisResponse = {
+  score: 75,
+  enriched_data: {
+    company_info: {
+      size: "50-200 employees",
+      industry: "Software & Technology",
+      founded: "2015",
+      location: "San Francisco, CA"
+    },
+    contact_info: {
+      phone: "+1 (555) 123-4567",
+      linkedin: "https://linkedin.com/company/demo",
+      twitter: "https://twitter.com/demo"
+    },
+    engagement_history: {
+      last_interaction: "2025-05-15",
+      interaction_count: 3,
+      channels: ["Email", "Website Visit"]
+    }
+  },
+  recommendations: [
+    "Schedule a follow-up call within 48 hours",
+    "Share case study about similar customer in their industry",
+    "Offer a personalized product demo"
+  ]
+};
+
 // API Functions
 export const generateInsight = async (input: string): Promise<InsightResponse> => {
   try {
@@ -124,9 +152,28 @@ export const analyzeLead = async (leadData: LeadAnalysisRequest): Promise<LeadAn
   } catch (error) {
     console.error("Failed to analyze lead:", error);
     
+    // Check if we should use mock data (for development/demo purposes)
+    if (import.meta.env.VITE_USE_MOCK_DATA === "true") {
+      console.log("Using mock lead data due to API error");
+      // Add some randomness to the mock data to make it look dynamic
+      const mockData = { 
+        ...MOCK_LEAD_ANALYSIS, 
+        score: Math.floor(Math.random() * 30) + 65 // Random score between 65-95
+      };
+      
+      // Customize mock data with the actual lead name and company
+      if (mockData.recommendations && mockData.recommendations.length > 0) {
+        mockData.recommendations[0] = `Contact ${leadData.name} from ${leadData.company}`;
+      }
+      
+      return mockData;
+    }
+    
     // Provide more specific error message based on the error type
     if (error instanceof TypeError && error.message === "Failed to fetch") {
       throw new Error("Network error: Unable to connect to the API server. Please check your internet connection.");
+    } else if (error instanceof TypeError && error.message === "Load failed") {
+      throw new Error("Network error: API endpoint unreachable. The service may be down or experiencing issues.");
     } else if (error.name === "AbortError") {
       throw new Error("Request timeout: The server took too long to respond.");
     }

@@ -10,6 +10,7 @@ const LeadAnalyzer: React.FC = () => {
   const [result, setResult] = useState<LeadAnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<'idle' | 'error' | 'success'>('idle');
+  const [lastFormData, setLastFormData] = useState<any>(null);
 
   const handleAnalysisComplete = (analysisResult: LeadAnalysisResponse) => {
     setResult(analysisResult);
@@ -20,6 +21,24 @@ const LeadAnalyzer: React.FC = () => {
   const handleAnalysisError = (errorMessage: string) => {
     setError(errorMessage);
     setApiStatus('error');
+  };
+  
+  const handleRetry = () => {
+    if (lastFormData) {
+      // Reset the error state
+      setError(null);
+      setApiStatus('idle');
+      
+      // Re-submit the last form data
+      const formElement = document.querySelector('form');
+      if (formElement) {
+        formElement.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
+  };
+
+  const handleFormDataCapture = (formData: any) => {
+    setLastFormData(formData);
   };
 
   return (
@@ -44,9 +63,14 @@ const LeadAnalyzer: React.FC = () => {
       <LeadAnalyzerForm 
         onAnalysisComplete={handleAnalysisComplete} 
         onAnalysisError={handleAnalysisError}
+        onFormDataCapture={handleFormDataCapture}
       />
       
-      <LeadAnalyzerResults result={result} error={error} />
+      <LeadAnalyzerResults 
+        result={result} 
+        error={error} 
+        onRetry={handleRetry}
+      />
     </div>
   );
 };
