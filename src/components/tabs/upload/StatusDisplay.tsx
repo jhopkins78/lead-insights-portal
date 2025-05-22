@@ -30,6 +30,16 @@ const StatusDisplay: React.FC<StatusDisplayProps> = ({
   }
   
   if (processing === "failed") {
+    // Format error message to be more user-friendly
+    let errorMessage = error || "An unknown error occurred during processing.";
+    
+    // Handle specific error types
+    if (errorMessage.includes("404")) {
+      errorMessage = "The file processing server endpoint was not found (404). This could be due to server maintenance or a configuration issue.";
+    } else if (errorMessage.includes("Failed to fetch")) {
+      errorMessage = "Unable to connect to the processing server. Please check your internet connection and try again.";
+    }
+    
     return (
       <div className="mt-4 p-4 bg-rose-50 border border-rose-200 rounded-md">
         <div className="flex items-center gap-2 text-rose-700 font-medium">
@@ -37,7 +47,10 @@ const StatusDisplay: React.FC<StatusDisplayProps> = ({
           <span>Processing Failed</span>
         </div>
         <p className="mt-2 text-sm text-rose-700">
-          {error || "An unknown error occurred during processing."}
+          {errorMessage}
+        </p>
+        <p className="mt-2 text-sm text-rose-700">
+          Please try again later or contact support if the problem persists.
         </p>
       </div>
     );
