@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Check, AlertTriangle } from "lucide-react";
+import { Check, AlertTriangle, AlertCircle } from "lucide-react";
 
 interface StatusDisplayProps {
   processing: "idle" | "uploading" | "extraction" | "transformation" | "loading" | "completed" | "failed";
@@ -30,14 +29,21 @@ const StatusDisplay: React.FC<StatusDisplayProps> = ({
   }
   
   if (processing === "failed") {
-    // Format error message to be more user-friendly
+    // Format error message to be more user-friendly and provide detailed information
     let errorMessage = error || "An unknown error occurred during processing.";
+    let technicalDetails = null;
     
     // Handle specific error types
     if (errorMessage.includes("404")) {
       errorMessage = "The file processing server endpoint was not found (404). This could be due to server maintenance or a configuration issue.";
-    } else if (errorMessage.includes("Failed to fetch")) {
+    } else if (errorMessage.includes("Failed to fetch") || errorMessage.includes("Load failed")) {
       errorMessage = "Unable to connect to the processing server. Please check your internet connection and try again.";
+    } else if (errorMessage.includes("timeout") || errorMessage.includes("abort")) {
+      errorMessage = "The request timed out. The server took too long to respond.";
+    } else if (errorMessage.length > 100) {
+      // If error is very long, extract a summary and keep details separate
+      technicalDetails = errorMessage;
+      errorMessage = "Processing failed due to a server error. Technical details are provided below.";
     }
     
     return (
@@ -49,7 +55,18 @@ const StatusDisplay: React.FC<StatusDisplayProps> = ({
         <p className="mt-2 text-sm text-rose-700">
           {errorMessage}
         </p>
-        <p className="mt-2 text-sm text-rose-700">
+        
+        {/* Technical error details in collapsible section for developers */}
+        {technicalDetails && (
+          <details className="mt-3">
+            <summary className="text-xs text-rose-600 cursor-pointer">Technical Details</summary>
+            <pre className="mt-2 p-2 bg-rose-100 rounded text-xs font-mono text-rose-800 whitespace-pre-wrap">
+              {technicalDetails}
+            </pre>
+          </details>
+        )}
+        
+        <p className="mt-3 text-sm text-rose-700">
           Please try again later or contact support if the problem persists.
         </p>
       </div>

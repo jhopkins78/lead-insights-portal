@@ -3,7 +3,7 @@ import { FileUploader } from "@/components/ui/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Accordion,
   AccordionContent,
@@ -18,6 +18,7 @@ import {
 import { ChevronDown, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import DataPreview from "@/components/data/DataPreview";
 import VisualizationGrid from "@/components/visualizations/VisualizationGrid";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type AgentStatus = {
   name: string;
@@ -38,10 +39,12 @@ const AutoAnalysis: React.FC = () => {
     { name: "Evaluation Agent", status: "pending" }
   ]);
   const [previewData, setPreviewData] = useState<Array<Record<string, any>> | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleFilesSelected = (selectedFiles: File[]) => {
     setFiles(selectedFiles);
+    setErrorDetails(null); // Reset error on new file selection
     
     // If there's a CSV file, generate sample preview data
     const csvFile = selectedFiles.find(file => file.name.endsWith('.csv'));
@@ -79,8 +82,10 @@ const AutoAnalysis: React.FC = () => {
     }
 
     try {
+      // Reset states
       setStatus("uploading");
       setProgress(10);
+      setErrorDetails(null);
       
       // Create formData for file upload
       const formData = new FormData();
@@ -88,54 +93,169 @@ const AutoAnalysis: React.FC = () => {
         formData.append("files", file);
       });
 
-      // Upload files to the backend
-      const uploadResponse = await fetch(`${API_BASE_URL}/upload-assignment-files`, {
-        method: "POST",
-        body: formData
-      });
+      // Get API URL from environment variable
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://retool-dashboard.onrender.com";
+      const analyzeEndpoint = `${apiBaseUrl}/api/analyze-assignment`;
+      
+      console.log(`Uploading files to ${analyzeEndpoint}`);
 
-      if (!uploadResponse.ok) {
-        throw new Error(`Upload failed with status: ${uploadResponse.status}`);
+      // Add timeout to avoid hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      try {
+        const response = await fetch(analyzeEndpoint, {
+          method: "POST",
+          body: formData,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        // Check if the response is ok
+        if (!response.ok) {
+          let errorMessage = `Server error: ${response.status}`;
+          
+          try {
+            // Try to parse response body for detailed error
+            const errorBody = await response.json();
+            errorMessage = errorBody.detail || errorBody.message || errorMessage;
+          } catch (parseError) {
+            // If we can't parse JSON, try to get text
+            try {
+              const textError = await response.text();
+              if (textError) errorMessage = `${errorMessage} - ${textError}`;
+            } catch (e) {
+              // Unable to get text either, use default message
+            }
+          }
+          
+          console.error(`API Error: ${errorMessage}`);
+          setErrorDetails(errorMessage);
+          
+          // Check if we should fall back to demo mode
+          if (response.status === 404 || response.status >= 500) {
+            console.log("Server unreachable or endpoint not found. Falling back to demo mode.");
+            return simulateDemoAnalysis();
+          } else {
+            // For other error types, we'll show the error
+            throw new Error(errorMessage);
+          }
+        }
+        
+        // If response is ok, begin processing
+        const responseData = await response.json();
+        console.log("Analysis response:", responseData);
+        setProgress(40);
+        setStatus("processing");
+        
+        // Update agent statuses with real data if available
+        if (responseData.agents) {
+          setAgents(responseData.agents);
+        } else {
+          // Otherwise, start simulation of agent progress
+          await simulateAgentProgress();
+        }
+        
+        // Check if there's a report in the response
+        if (responseData.report) {
+          setReport(responseData.report);
+        } else {
+          // Try to fetch report from a separate endpoint
+          try {
+            const reportResponse = await fetch(`${apiBaseUrl}/api/reports/final_report.md`);
+            if (reportResponse.ok) {
+              const reportText = await reportResponse.text();
+              setReport(reportText);
+            }
+          } catch (reportError) {
+            console.error("Failed to fetch report:", reportError);
+          }
+        }
+        
+        setProgress(100);
+        setStatus("completed");
+        
+        toast({
+          title: "Analysis completed",
+          description: "Your files have been analyzed successfully."
+        });
+        
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        console.error("Fetch error:", fetchError);
+        
+        // Determine if this is a network error or timeout
+        const isNetworkError = fetchError instanceof TypeError && 
+                              (fetchError.message === "Failed to fetch" || 
+                               fetchError.message === "Load failed");
+        
+        const isTimeout = fetchError.name === "AbortError";
+        
+        if (isNetworkError || isTimeout) {
+          console.log("Network error or timeout. Falling back to demo mode.");
+          setErrorDetails(isTimeout ? 
+            "Request timeout: The server took too long to respond." : 
+            "Network error: The server is unreachable. Falling back to demo mode.");
+          return simulateDemoAnalysis();
+        } else {
+          // For other errors, propagate to the main error handler
+          throw fetchError;
+        }
       }
-
-      setProgress(40);
-      setStatus("processing");
-      
-      // Update agent statuses (simulating backend processing)
-      setAgents(prev => prev.map((agent, index) => {
-        if (index === 0) return { ...agent, status: "running" };
-        return agent;
-      }));
-
-      // Simulate sequential agent progress
-      await simulateAgentProgress();
-      
-      // Fetch the final report
-      const reportResponse = await fetch(`${API_BASE_URL}/reports/final_report.md`);
-      
-      if (!reportResponse.ok) {
-        throw new Error(`Failed to fetch report with status: ${reportResponse.status}`);
-      }
-      
-      const reportText = await reportResponse.text();
-      setReport(reportText);
-      setProgress(100);
-      setStatus("completed");
-      
-      toast({
-        title: "Analysis completed",
-        description: "Your files have been analyzed successfully."
-      });
       
     } catch (error) {
       console.error("Error during analysis:", error);
       setStatus("failed");
+      setErrorDetails(error instanceof Error ? error.message : "An unknown error occurred");
+      
       toast({
         title: "Analysis failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
+        description: error instanceof Error ? error.message : "An unknown error occurred during analysis",
         variant: "destructive"
       });
     }
+  };
+
+  // Simulate demo mode analysis when API is unavailable
+  const simulateDemoAnalysis = async () => {
+    setProgress(40);
+    setStatus("processing");
+    toast({
+      title: "Demo Mode Active",
+      description: "Using demo mode because the server is unavailable.",
+      variant: "default"
+    });
+    
+    // Simulate agent progress
+    await simulateAgentProgress();
+    
+    // Set sample report
+    setReport(`# Auto Analysis Report (Demo Mode)
+
+## Data Overview
+- Total Records: 1,250
+- Features: 8
+- Missing Values: 2.3%
+- Target Variable: Lead Conversion Rate
+
+## Key Findings
+1. Income level is highly correlated with conversion rate (r=0.78)
+2. Geographic clusters show significant patterns
+3. Seasonal trends identified in Q2 and Q4
+
+## Model Performance
+- Random Forest: AUC 0.84
+- Gradient Boosting: AUC 0.86
+- Neural Network: AUC 0.79
+
+## Recommendations
+- Focus marketing on high-income segments
+- Create specialized campaigns for Q2/Q4
+- Implement lead scoring based on the Gradient Boosting model`);
+    
+    setProgress(100);
+    setStatus("completed");
   };
 
   // Helper function to simulate agent progress (in a real app, this would be replaced with actual API calls)
@@ -156,8 +276,6 @@ const AutoAnalysis: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     setAgents(prev => prev.map(a => a.name === "Evaluation Agent" ? {...a, status: "completed"} : a));
     setProgress(95);
-    
-    return true;
   };
 
   const getAgentStatusIcon = (status: string) => {
@@ -217,16 +335,19 @@ const AutoAnalysis: React.FC = () => {
         );
       case "failed":
         return (
-          <div className="mt-4 p-4 bg-rose-50 border border-rose-200 rounded-md flex items-center gap-2 text-rose-600">
+          <Alert variant="destructive" className="mt-4">
             <AlertCircle className="h-5 w-5" />
-            <p>Analysis failed. Please check your files and try again.</p>
-          </div>
+            <AlertTitle>Analysis failed</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>Please check your files and try again.</p>
+              {errorDetails && (
+                <p className="text-sm font-mono bg-rose-50 p-2 rounded whitespace-pre-wrap">{errorDetails}</p>
+              )}
+            </AlertDescription>
+          </Alert>
         );
     }
   };
-
-  // Replace API_BASE_URL with the actual base URL from your services
-  const API_BASE_URL = "https://api.example.com";
 
   return (
     <div className="space-y-6">
@@ -272,10 +393,10 @@ const AutoAnalysis: React.FC = () => {
           </div>
         )}
 
-        {/* Visualization Grid */}
-        {previewData && (
+        {/* Visualization Grid - Now always shows placeholders when files are uploaded */}
+        {files.length > 0 && (
           <div className="mt-6">
-            <VisualizationGrid dataLoaded={previewData !== null} />
+            <VisualizationGrid dataLoaded={status === "completed"} />
           </div>
         )}
 
@@ -287,7 +408,6 @@ const AutoAnalysis: React.FC = () => {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="p-4 border-t prose max-w-none">
-                {/* In a real app, you would use a markdown renderer here */}
                 <pre className="whitespace-pre-wrap overflow-auto max-h-[500px] p-4 bg-gray-50 rounded text-sm">
                   {report}
                 </pre>
