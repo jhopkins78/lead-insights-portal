@@ -3,16 +3,18 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { LeadAnalysisRequest, analyzeLead } from "@/services/api";
+import { LeadAnalysisRequest, analyzeLead, LeadAnalysisResponse } from "@/services/api";
 
 interface LeadAnalyzerFormProps {
-  onAnalysisComplete: (result: any) => void;
+  onAnalysisComplete: (result: LeadAnalysisResponse) => void;
+  onAnalysisError: (error: string) => void;
 }
 
 const LeadAnalyzerForm: React.FC<LeadAnalyzerFormProps> = ({ 
-  onAnalysisComplete 
+  onAnalysisComplete,
+  onAnalysisError
 }) => {
   const [formData, setFormData] = useState<LeadAnalysisRequest>({
     name: "",
@@ -56,11 +58,15 @@ const LeadAnalyzerForm: React.FC<LeadAnalyzerFormProps> = ({
       });
     } catch (error) {
       console.error("Error analyzing lead:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
       toast({
         title: "Error",
-        description: `Failed to analyze lead: ${error instanceof Error ? error.message : "Unknown error"}`,
+        description: `Failed to analyze lead: ${errorMessage}`,
         variant: "destructive",
       });
+      
+      onAnalysisError(errorMessage);
     } finally {
       setIsLoading(false);
     }

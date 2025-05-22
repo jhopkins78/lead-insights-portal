@@ -1,14 +1,28 @@
 
 import React from "react";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import LeadScoreCard from "./LeadScoreCard";
 import EnrichedDataCard from "./EnrichedDataCard";
 import { LeadAnalysisResponse } from "@/services/api";
 
 interface LeadAnalyzerResultsProps {
-  result: LeadAnalysisResponse;
+  result: LeadAnalysisResponse | null;
+  error?: string | null;
 }
 
-const LeadAnalyzerResults: React.FC<LeadAnalyzerResultsProps> = ({ result }) => {
+const LeadAnalyzerResults: React.FC<LeadAnalyzerResultsProps> = ({ result, error }) => {
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mt-8">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          {error}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
   if (!result) return null;
 
   return (

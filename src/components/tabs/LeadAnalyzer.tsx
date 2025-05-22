@@ -1,14 +1,25 @@
 
 import React, { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { LeadAnalysisResponse } from "@/services/api";
 import LeadAnalyzerForm from "@/components/lead-analyzer/LeadAnalyzerForm";
 import LeadAnalyzerResults from "@/components/lead-analyzer/LeadAnalyzerResults";
 
 const LeadAnalyzer: React.FC = () => {
   const [result, setResult] = useState<LeadAnalysisResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<'idle' | 'error' | 'success'>('idle');
 
   const handleAnalysisComplete = (analysisResult: LeadAnalysisResponse) => {
     setResult(analysisResult);
+    setError(null);
+    setApiStatus('success');
+  };
+
+  const handleAnalysisError = (errorMessage: string) => {
+    setError(errorMessage);
+    setApiStatus('error');
   };
 
   return (
@@ -20,9 +31,22 @@ const LeadAnalyzer: React.FC = () => {
         </p>
       </div>
 
-      <LeadAnalyzerForm onAnalysisComplete={handleAnalysisComplete} />
+      {apiStatus === 'error' && !error?.includes("Network error") && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>API Error</AlertTitle>
+          <AlertDescription>
+            There was a problem connecting to the analysis service. Please try again later.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <LeadAnalyzerForm 
+        onAnalysisComplete={handleAnalysisComplete} 
+        onAnalysisError={handleAnalysisError}
+      />
       
-      {result && <LeadAnalyzerResults result={result} />}
+      <LeadAnalyzerResults result={result} error={error} />
     </div>
   );
 };

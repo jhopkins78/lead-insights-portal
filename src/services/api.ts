@@ -98,13 +98,20 @@ export const analyzeLead = async (leadData: LeadAnalysisRequest): Promise<LeadAn
     console.log("Sending lead data to API:", apiRequestBody);
     console.log("API URL:", `${API_BASE_URL}/leads/analyze`);
 
+    // Add timeout to avoid hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
     const response = await fetch(`${API_BASE_URL}/leads/analyze`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(apiRequestBody),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -116,6 +123,14 @@ export const analyzeLead = async (leadData: LeadAnalysisRequest): Promise<LeadAn
     return data;
   } catch (error) {
     console.error("Failed to analyze lead:", error);
+    
+    // Provide more specific error message based on the error type
+    if (error instanceof TypeError && error.message === "Failed to fetch") {
+      throw new Error("Network error: Unable to connect to the API server. Please check your internet connection.");
+    } else if (error.name === "AbortError") {
+      throw new Error("Request timeout: The server took too long to respond.");
+    }
+    
     throw error;
   }
 };
