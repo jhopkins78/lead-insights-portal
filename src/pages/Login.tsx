@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
 const Login = () => {
-  console.log("Rendering Login Page");
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -23,7 +21,6 @@ const Login = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt with:", { email });
     
     // This is a placeholder authentication logic
     // In a real app, you would connect this to your authentication service

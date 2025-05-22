@@ -2,31 +2,11 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Search, BarChart2, FileText } from "lucide-react";
-import FileUploadDialog from "./eda/FileUploadDialog";
-import VisualAnalysisPanel from "./eda/VisualAnalysisPanel";
-import NarrativeAnalysisPanel from "./eda/NarrativeAnalysisPanel";
-import StatusIndicator from "./eda/StatusIndicator";
-import EmptyStateContent from "./eda/EmptyStateContent";
-import { useEdaAnalysis } from "./eda/useEdaAnalysis";
 
 const EdaExplorer: React.FC = () => {
-  console.log("Rendering EDA Explorer");
-  
   const [selectedView, setSelectedView] = useState("visual");
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  
-  const {
-    files,
-    status,
-    progress,
-    error,
-    edaData,
-    handleFilesSelected,
-    handleProcessFiles
-  } = useEdaAnalysis();
-
-  console.log("EDA Explorer state:", { selectedView, status, edaData });
 
   return (
     <div className="space-y-6">
@@ -58,40 +38,30 @@ const EdaExplorer: React.FC = () => {
             </TabsList>
             
             <TabsContent value="visual">
-              {status === "completed" && edaData ? (
-                <VisualAnalysisPanel data={edaData} />
-              ) : (
-                <EmptyStateContent 
-                  isNarrativeView={false} 
-                  onUploadClick={() => setIsUploadDialogOpen(true)} 
-                />
-              )}
+              <div className="space-y-6">
+                <div className="text-center p-12 border-2 border-dashed rounded-lg">
+                  <BarChart2 className="h-16 w-16 mx-auto text-insight-300 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No data visualizations available</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Upload and process data files to generate visualizations
+                  </p>
+                  <Button>Upload Data</Button>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="narrative">
-              {status === "completed" && edaData ? (
-                <NarrativeAnalysisPanel data={edaData} />
-              ) : (
-                <EmptyStateContent 
-                  isNarrativeView={true} 
-                  onUploadClick={() => setIsUploadDialogOpen(true)} 
-                />
-              )}
+              <div className="prose max-w-none">
+                <h3>Data Overview</h3>
+                <p>No data has been processed yet. Upload and process data files to generate narrative EDA.</p>
+                <p className="text-muted-foreground">
+                  The narrative EDA will include data summaries, key insights, and recommendations.
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
-          
-          <StatusIndicator status={status} progress={progress} error={error} />
         </CardContent>
       </Card>
-
-      <FileUploadDialog 
-        open={isUploadDialogOpen}
-        onOpenChange={setIsUploadDialogOpen}
-        onFilesSelected={handleFilesSelected}
-        onProcessFiles={handleProcessFiles}
-        files={files}
-        processing={status !== "idle" && status !== "completed" && status !== "failed"}
-      />
     </div>
   );
 };
