@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { FileUploader } from "@/components/ui/file-uploader";
 import { Button } from "@/components/ui/button";
@@ -408,7 +409,7 @@ const AutoAnalysis: React.FC = () => {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="p-4 border-t prose max-w-none">
-                <pre className="whitespace-pre-wrap overflow-auto max-h-[500px] p-4 bg-gray-50 rounded text-sm">
+                <pre className="whitespace-pre-wrap overflow-auto max-h-[500px] p-4 bg-gray-50 rounded text-sm text-left">
                   {report}
                 </pre>
               </div>
