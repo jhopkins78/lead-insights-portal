@@ -11,6 +11,8 @@ import EmptyStateContent from "./eda/EmptyStateContent";
 import { useEdaAnalysis } from "./eda/useEdaAnalysis";
 
 const EdaExplorer: React.FC = () => {
+  console.log("Rendering EDA Explorer");
+  
   const [selectedView, setSelectedView] = useState("visual");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   
@@ -23,6 +25,8 @@ const EdaExplorer: React.FC = () => {
     handleFilesSelected,
     handleProcessFiles
   } = useEdaAnalysis();
+
+  console.log("EDA Explorer state:", { selectedView, status, edaData });
 
   return (
     <div className="space-y-6">

@@ -24,6 +24,9 @@ const DashboardLayout: React.FC = () => {
     isSamaritanAI
   } = useDashboardState();
 
+  // Add a console log for debugging
+  console.log("Rendering DashboardLayout", { activePage, activeTab, isSamaritanAI });
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-insight-100/30">
       <DashboardHeader

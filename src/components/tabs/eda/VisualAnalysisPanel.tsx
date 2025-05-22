@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,8 +29,12 @@ interface VisualAnalysisPanelProps {
 }
 
 const VisualAnalysisPanel: React.FC<VisualAnalysisPanelProps> = ({ data }) => {
+  // Add debugging console log
+  console.log("VisualAnalysisPanel rendering with data:", data);
+
   // If no visualization data is available
   if (!data || !data.correlation_matrix || !data.categorical_counts || !data.time_series) {
+    console.log("Missing required data in VisualAnalysisPanel");
     return (
       <div className="text-center p-12">
         <p className="text-muted-foreground">No visualization data is available for this dataset.</p>
@@ -61,7 +66,7 @@ const VisualAnalysisPanel: React.FC<VisualAnalysisPanelProps> = ({ data }) => {
     }));
   };
 
-  const barChartData = categoryData.length > 0 ? transformCategoryData(categoryData[0][1]) : [];
+  const barChartData = categoryData.length > 0 ? transformCategoryData(categoryData[0]) : [];
 
   // Create time series data
   const timeSeriesData = data.time_series.dates.map((date: string, i: number) => ({

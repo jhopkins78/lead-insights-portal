@@ -23,6 +23,8 @@ import PredictionHistoryViewer from "@/components/tabs/PredictionHistoryViewer";
 import QuarterlyReports from "@/components/tabs/QuarterlyReports";
 
 const DashboardTabContent: React.FC = () => {
+  console.log("Rendering Dashboard Tab Content");
+  
   return (
     <>
       {/* Lead Intelligence tabs */}
@@ -70,7 +72,7 @@ const DashboardTabContent: React.FC = () => {
         <PredictionHistoryViewer />
       </TabsContent>
       
-      {/* Data Intelligence Suite Tab Contents - Fixed spacing */}
+      {/* Data Intelligence Suite Tab Contents */}
       <TabsContent value="uploader" className="mt-0 pt-2">
         <DataUploader />
       </TabsContent>
