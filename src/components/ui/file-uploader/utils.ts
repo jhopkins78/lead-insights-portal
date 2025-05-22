@@ -13,12 +13,12 @@ export const createAcceptString = (acceptedTypes: AcceptedFileType[]): string =>
 /**
  * Returns an appropriate icon based on file extension
  */
-export const getFileIcon = (fileName: string) => {
+export const getFileIcon = (fileName: string): React.ReactNode => {
   const extension = fileName.split('.').pop()?.toLowerCase();
   
   switch(extension) {
     case 'json': {
-      return <FileJson className="h-5 w-5" />;
+      return React.createElement(FileJson, { className: "h-5 w-5" });
     }
     case 'csv':
     case 'xls':
@@ -29,10 +29,10 @@ export const getFileIcon = (fileName: string) => {
     case 'md':
     case 'html':
     case 'txt': {
-      return <FileText className="h-5 w-5" />;
+      return React.createElement(FileText, { className: "h-5 w-5" });
     }
     default: {
-      return <FileArchive className="h-5 w-5" />;
+      return React.createElement(FileArchive, { className: "h-5 w-5" });
     }
   }
 };
