@@ -52,23 +52,29 @@ const Login = () => {
       className="min-h-screen flex items-start justify-center pt-20 p-4"
       style={{
         background: `
-          linear-gradient(to bottom, rgba(10, 31, 68, 0.95), rgba(20, 44, 102, 0.95)),
-          url('/lovable-uploads/904e0440-68e1-4b14-a15d-d99c09e25bf5.png')
+          linear-gradient(to bottom, rgba(10, 31, 68, 0.85), rgba(20, 44, 102, 0.85))
         `,
-        backgroundSize: 'contain',
-        backgroundPosition: 'center top',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
+        backgroundAttachment: 'fixed',
+        position: 'relative'
       }}
     >
-      <div className="w-full max-w-md">
+      {/* Add NOLADAD watermark/logo as a separate element */}
+      <div 
+        className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25"
+        style={{ zIndex: 0 }}
+      >
+        <h1 className="text-white text-[12rem] font-bold tracking-wider">NOLADAD</h1>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center">
-          {/* Logo with subtle glow effect */}
-          
           {/* Increased margin-top for button positioning */}
           {!showLoginForm && (
             <Button 
-              className="w-1/2 bg-insight-800 hover:bg-[#4C6EF5] text-white mt-[600px] shadow-lg shadow-[#0A1F44]/50 transition-all duration-300"
+              className="w-1/2 bg-insight-800 hover:bg-[#4C6EF5] text-white mt-[400px] shadow-lg shadow-[#0A1F44]/50 transition-all duration-300"
               onClick={() => setShowLoginForm(true)}
             >
               Access Portal
