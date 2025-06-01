@@ -1,64 +1,70 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload } from "lucide-react";
-import FileUploadSection from "./upload/FileUploadSection";
-import ProcessingProgress from "./upload/ProcessingProgress";
-import PipelineStages from "./upload/PipelineStages";
-import StatusDisplay from "./upload/StatusDisplay";
-import { useFileProcessing } from "./upload/useFileProcessing";
+import { Database, Info } from "lucide-react";
+import DatasetStatus from "@/components/upload/DatasetStatus";
+import { useDataset } from "@/contexts/DatasetContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const DataUploader: React.FC = () => {
-  const {
-    files,
-    processing,
-    progress,
-    processingDetails,
-    error,
-    recordsProcessed,
-    handleFilesSelected,
-    handleProcessFiles
-  } = useFileProcessing();
+  const { currentDataset } = useDataset();
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-insight-900 mb-2">Data Uploader</h2>
+        <h2 className="text-2xl font-bold mb-4">Data Upload Management</h2>
         <p className="text-muted-foreground mb-6">
-          Upload and process data files with the File Router Agent
+          View and manage your uploaded datasets. All uploads are now handled through the centralized Data Upload Hub in the header.
         </p>
       </div>
 
-      <Card className="border-t-4 border-t-insight-500">
+      {/* Info Alert */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>New Upload Process:</strong> Use the "Data Upload Hub" button in the top-right header to upload new datasets. 
+          Files uploaded there will be automatically available across all analysis modules.
+        </AlertDescription>
+      </Alert>
+
+      {/* Dataset Status */}
+      <DatasetStatus moduleName="Data Management" />
+
+      {/* Additional Information Card */}
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            <span>Upload Files</span>
+            <Database className="h-5 w-5" />
+            Dataset Information
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <FileUploadSection
-            files={files}
-            processing={processing}
-            onFilesSelected={handleFilesSelected}
-            onProcessFiles={handleProcessFiles}
-          />
-          
-          <ProcessingProgress
-            processing={processing}
-            progress={progress}
-            processingDetails={processingDetails}
-          />
-          
-          {processing !== "idle" && (
-            <PipelineStages processing={processing} />
+          {currentDataset ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">File Type</h4>
+                  <p className="text-lg">{currentDataset.fileType.toUpperCase()}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground">Status</h4>
+                  <p className="text-lg capitalize">{currentDataset.status}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium text-sm text-muted-foreground">Used By Modules</h4>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {currentDataset.usedBy.map((module) => (
+                    <span key={module} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                      {module}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No dataset currently loaded. Use the Data Upload Hub to get started.</p>
           )}
-          
-          <StatusDisplay
-            processing={processing}
-            error={error}
-            recordsProcessed={recordsProcessed}
-          />
         </CardContent>
       </Card>
     </div>
