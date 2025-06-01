@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,11 +21,12 @@ const DatasetStatus: React.FC<DatasetStatusProps> = ({
     fetchAvailableDatasets 
   } = useDataset();
 
+  // Only update usage when currentDataset changes, not on every render
   React.useEffect(() => {
-    if (currentDataset) {
+    if (currentDataset?.id) {
       updateDatasetUsage(currentDataset.id, [moduleName]);
     }
-  }, [currentDataset, moduleName, updateDatasetUsage]);
+  }, [currentDataset?.id, moduleName]); // Remove updateDatasetUsage from dependencies to prevent infinite loop
 
   const handleRefresh = async () => {
     await fetchAvailableDatasets();
