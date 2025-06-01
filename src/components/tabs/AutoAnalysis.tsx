@@ -1,26 +1,15 @@
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { ChevronDown, AlertCircle, CheckCircle, Loader2, Play } from "lucide-react";
 import DataPreview from "@/components/data/DataPreview";
 import VisualizationGrid from "@/components/visualizations/VisualizationGrid";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import DatasetStatus from "@/components/upload/DatasetStatus";
 import { useDataset } from "@/contexts/DatasetContext";
+import AutoAnalysisHeader from "./auto-analysis/AutoAnalysisHeader";
+import AnalysisControls from "./auto-analysis/AnalysisControls";
+import ProcessingStatus from "./auto-analysis/ProcessingStatus";
+import AnalysisReport from "./auto-analysis/AnalysisReport";
+import FutureFeatures from "./auto-analysis/FutureFeatures";
 
 type AgentStatus = {
   name: string;
@@ -28,11 +17,11 @@ type AgentStatus = {
   message?: string;
 };
 
-type ProcessingStatus = "idle" | "processing" | "completed" | "failed";
+type ProcessingStatusType = "idle" | "processing" | "completed" | "failed";
 
 const AutoAnalysis: React.FC = () => {
   const { currentDataset } = useDataset();
-  const [status, setStatus] = useState<ProcessingStatus>("idle");
+  const [status, setStatus] = useState<ProcessingStatusType>("idle");
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<string | null>(null);
   const [agents, setAgents] = useState<AgentStatus[]>([
@@ -129,67 +118,6 @@ const AutoAnalysis: React.FC = () => {
     setProgress(95);
   };
 
-  const getAgentStatusIcon = (status: string) => {
-    switch (status) {
-      case "running":
-        return <Loader2 className="animate-spin h-4 w-4 text-blue-500" />;
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "failed":
-        return <AlertCircle className="h-4 w-4 text-rose-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const renderStatusIndicator = () => {
-    switch (status) {
-      case "idle":
-        return null;
-      case "processing":
-      case "completed":
-        return (
-          <div className="mt-4 space-y-4">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Processing...</span>
-              <span>{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-            
-            <Card className="mt-4">
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-medium mb-2">Agent Activity</h3>
-                <div className="space-y-2">
-                  {agents.map((agent) => (
-                    <div key={agent.name} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                      <div className="flex items-center gap-2">
-                        {getAgentStatusIcon(agent.status)}
-                        <span>{agent.name}</span>
-                      </div>
-                      <span className="text-sm capitalize text-muted-foreground">{agent.status}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-      case "failed":
-        return (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-5 w-5" />
-            <AlertTitle>Analysis failed</AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>Please check your files and try again.</p>
-              {errorDetails && (
-                <p className="text-sm font-mono bg-rose-50 p-2 rounded whitespace-pre-wrap">{errorDetails}</p>
-              )}
-            </AlertDescription>
-          </Alert>
-        );
-    }
-  };
-
   const startAnalysis = async () => {
     if (!currentDataset) {
       toast({
@@ -231,93 +159,44 @@ const AutoAnalysis: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Automatic Data Analysis</h2>
-        <p className="text-muted-foreground mb-6">
-          Run comprehensive AI analysis on your uploaded dataset. Our agents will process your data and generate insights.
-        </p>
+      <AutoAnalysisHeader />
 
-        {/* Dataset Status */}
-        <DatasetStatus moduleName="Auto Analysis" />
+      {/* Dataset Status */}
+      <DatasetStatus moduleName="Auto Analysis" />
 
-        {/* Analysis Controls - Only show if dataset is available */}
-        {currentDataset && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <Button 
-                  onClick={startAnalysis} 
-                  disabled={status === "processing"}
-                  className="gap-2"
-                  size="lg"
-                >
-                  {status === "processing" ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Processing Analysis...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4" />
-                      Start AI Analysis
-                    </>
-                  )}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Analyze {currentDataset.name} with EDA, Modeling, and Evaluation agents
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {/* Analysis Controls - Only show if dataset is available */}
+      {currentDataset && (
+        <AnalysisControls 
+          onStartAnalysis={startAnalysis}
+          isProcessing={status === "processing"}
+          datasetName={currentDataset.name}
+        />
+      )}
 
-        {renderStatusIndicator()}
+      <ProcessingStatus 
+        status={status}
+        progress={progress}
+        agents={agents}
+        errorDetails={errorDetails}
+      />
 
-        {/* Dataset Preview */}
-        {previewData && (
-          <div className="mt-6">
-            <DataPreview data={previewData} maxRows={10} />
-          </div>
-        )}
+      {/* Dataset Preview */}
+      {previewData && (
+        <div className="mt-6">
+          <DataPreview data={previewData} maxRows={10} />
+        </div>
+      )}
 
-        {/* Visualization Grid - Now shows when dataset is available */}
-        {currentDataset && (
-          <div className="mt-6">
-            <VisualizationGrid dataLoaded={status === "completed"} />
-          </div>
-        )}
+      {/* Visualization Grid - Now shows when dataset is available */}
+      {currentDataset && (
+        <div className="mt-6">
+          <VisualizationGrid dataLoaded={status === "completed"} />
+        </div>
+      )}
 
-        {report && (
-          <Collapsible className="mt-6 border rounded-md overflow-hidden">
-            <CollapsibleTrigger className="flex w-full items-center justify-between p-4 text-left font-medium hover:bg-gray-50">
-              <h3 className="text-lg">Analysis Report</h3>
-              <ChevronDown className="h-4 w-4 transition-transform ui-open:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="p-4 border-t prose max-w-none">
-                <pre className="whitespace-pre-wrap overflow-auto max-h-[500px] p-4 bg-gray-50 rounded text-sm text-left">
-                  {report}
-                </pre>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+      {report && <AnalysisReport report={report} />}
 
-        {status === "completed" && (
-          <Accordion type="single" collapsible className="mt-4">
-            <AccordionItem value="future-features">
-              <AccordionTrigger>Future Features</AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2 text-muted-foreground">
-                  <p>• Model Metrics Tab - Compare RMSE, MAE, R² across models</p>
-                  <p>• Transformation Preview Tab - Before/after data state visualization</p>
-                  <p>• Report Download Button - With versioning and timestamping</p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
-      </div>
+      {status === "completed" && <FutureFeatures />}
     </div>
   );
 };
