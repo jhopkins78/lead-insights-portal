@@ -1,6 +1,4 @@
-
-import React, { useState } from "react";
-import { FileUploader } from "@/components/ui/file-uploader";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -16,10 +14,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { ChevronDown, AlertCircle, CheckCircle, Loader2, Play } from "lucide-react";
 import DataPreview from "@/components/data/DataPreview";
 import VisualizationGrid from "@/components/visualizations/VisualizationGrid";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import DatasetStatus from "@/components/upload/DatasetStatus";
+import { useDataset } from "@/contexts/DatasetContext";
 
 type AgentStatus = {
   name: string;
@@ -27,10 +27,10 @@ type AgentStatus = {
   message?: string;
 };
 
-type ProcessingStatus = "idle" | "uploading" | "processing" | "completed" | "failed";
+type ProcessingStatus = "idle" | "processing" | "completed" | "failed";
 
 const AutoAnalysis: React.FC = () => {
-  const [files, setFiles] = useState<File[]>([]);
+  const { currentDataset } = useDataset();
   const [status, setStatus] = useState<ProcessingStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<string | null>(null);
@@ -43,18 +43,13 @@ const AutoAnalysis: React.FC = () => {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleFilesSelected = (selectedFiles: File[]) => {
-    setFiles(selectedFiles);
-    setErrorDetails(null); // Reset error on new file selection
-    
-    // If there's a CSV file, generate sample preview data
-    const csvFile = selectedFiles.find(file => file.name.endsWith('.csv'));
-    if (csvFile) {
+  useEffect(() => {
+    if (currentDataset && currentDataset.name.endsWith('.csv')) {
       generateSamplePreviewData();
     } else {
       setPreviewData(null);
     }
-  };
+  }, [currentDataset]);
 
   // Generate sample data for preview (in a real app, this would parse the actual file)
   const generateSamplePreviewData = () => {
@@ -70,152 +65,6 @@ const AutoAnalysis: React.FC = () => {
     }));
     
     setPreviewData(mockData);
-  };
-
-  const uploadFiles = async () => {
-    if (files.length === 0) {
-      toast({
-        title: "No files selected",
-        description: "Please select files to upload for analysis",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Reset states
-      setStatus("uploading");
-      setProgress(10);
-      setErrorDetails(null);
-      
-      // Create formData for file upload
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append("files", file);
-      });
-
-      // Get API URL from environment variable
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://retool-dashboard.onrender.com";
-      const analyzeEndpoint = `${apiBaseUrl}/api/analyze-assignment`;
-      
-      console.log(`Uploading files to ${analyzeEndpoint}`);
-
-      // Add timeout to avoid hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-      
-      try {
-        const response = await fetch(analyzeEndpoint, {
-          method: "POST",
-          body: formData,
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        // Check if the response is ok
-        if (!response.ok) {
-          let errorMessage = `Server error: ${response.status}`;
-          
-          try {
-            // Try to parse response body for detailed error
-            const errorBody = await response.json();
-            errorMessage = errorBody.detail || errorBody.message || errorMessage;
-          } catch (parseError) {
-            // If we can't parse JSON, try to get text
-            try {
-              const textError = await response.text();
-              if (textError) errorMessage = `${errorMessage} - ${textError}`;
-            } catch (e) {
-              // Unable to get text either, use default message
-            }
-          }
-          
-          console.error(`API Error: ${errorMessage}`);
-          setErrorDetails(errorMessage);
-          
-          // Check if we should fall back to demo mode
-          if (response.status === 404 || response.status >= 500) {
-            console.log("Server unreachable or endpoint not found. Falling back to demo mode.");
-            return simulateDemoAnalysis();
-          } else {
-            // For other error types, we'll show the error
-            throw new Error(errorMessage);
-          }
-        }
-        
-        // If response is ok, begin processing
-        const responseData = await response.json();
-        console.log("Analysis response:", responseData);
-        setProgress(40);
-        setStatus("processing");
-        
-        // Update agent statuses with real data if available
-        if (responseData.agents) {
-          setAgents(responseData.agents);
-        } else {
-          // Otherwise, start simulation of agent progress
-          await simulateAgentProgress();
-        }
-        
-        // Check if there's a report in the response
-        if (responseData.report) {
-          setReport(responseData.report);
-        } else {
-          // Try to fetch report from a separate endpoint
-          try {
-            const reportResponse = await fetch(`${apiBaseUrl}/api/reports/final_report.md`);
-            if (reportResponse.ok) {
-              const reportText = await reportResponse.text();
-              setReport(reportText);
-            }
-          } catch (reportError) {
-            console.error("Failed to fetch report:", reportError);
-          }
-        }
-        
-        setProgress(100);
-        setStatus("completed");
-        
-        toast({
-          title: "Analysis completed",
-          description: "Your files have been analyzed successfully."
-        });
-        
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        console.error("Fetch error:", fetchError);
-        
-        // Determine if this is a network error or timeout
-        const isNetworkError = fetchError instanceof TypeError && 
-                              (fetchError.message === "Failed to fetch" || 
-                               fetchError.message === "Load failed");
-        
-        const isTimeout = fetchError.name === "AbortError";
-        
-        if (isNetworkError || isTimeout) {
-          console.log("Network error or timeout. Falling back to demo mode.");
-          setErrorDetails(isTimeout ? 
-            "Request timeout: The server took too long to respond." : 
-            "Network error: The server is unreachable. Falling back to demo mode.");
-          return simulateDemoAnalysis();
-        } else {
-          // For other errors, propagate to the main error handler
-          throw fetchError;
-        }
-      }
-      
-    } catch (error) {
-      console.error("Error during analysis:", error);
-      setStatus("failed");
-      setErrorDetails(error instanceof Error ? error.message : "An unknown error occurred");
-      
-      toast({
-        title: "Analysis failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred during analysis",
-        variant: "destructive"
-      });
-    }
   };
 
   // Simulate demo mode analysis when API is unavailable
@@ -296,16 +145,6 @@ const AutoAnalysis: React.FC = () => {
     switch (status) {
       case "idle":
         return null;
-      case "uploading":
-        return (
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Uploading files...</span>
-              <span>{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        );
       case "processing":
       case "completed":
         return (
@@ -350,40 +189,86 @@ const AutoAnalysis: React.FC = () => {
     }
   };
 
+  const startAnalysis = async () => {
+    if (!currentDataset) {
+      toast({
+        title: "No dataset selected",
+        description: "Please upload a dataset first using the Data Upload Hub",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setStatus("processing");
+      setProgress(10);
+      setErrorDetails(null);
+      
+      // Simulate API call with current dataset
+      console.log(`Starting analysis for dataset: ${currentDataset.name}`);
+      
+      toast({
+        title: "Analysis started",
+        description: `Processing ${currentDataset.name} with AI agents`,
+      });
+
+      // Simulate the analysis process
+      await simulateDemoAnalysis();
+      
+    } catch (error) {
+      console.error("Error during analysis:", error);
+      setStatus("failed");
+      setErrorDetails(error instanceof Error ? error.message : "An unknown error occurred");
+      
+      toast({
+        title: "Analysis failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred during analysis",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-4">Automatic Data Analysis</h2>
         <p className="text-muted-foreground mb-6">
-          Upload your data files for automatic analysis. Our AI agents will process your data and generate comprehensive insights.
+          Run comprehensive AI analysis on your uploaded dataset. Our agents will process your data and generate insights.
         </p>
 
-        <Card>
-          <CardContent className="pt-6">
-            <FileUploader
-              onFilesSelected={handleFilesSelected}
-              acceptedTypes={['csv', 'xlsx', 'json', 'md', 'pdf', 'doc', 'docx']}
-              maxFiles={10}
-              maxSizeMB={20}
-              className="mb-4"
-            />
-            
-            <Button 
-              onClick={uploadFiles} 
-              disabled={status === "uploading" || status === "processing" || files.length === 0}
-              className="w-full sm:w-auto mt-2"
-            >
-              {status === "uploading" || status === "processing" ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Start Analysis"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Dataset Status */}
+        <DatasetStatus moduleName="Auto Analysis" />
+
+        {/* Analysis Controls - Only show if dataset is available */}
+        {currentDataset && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <Button 
+                  onClick={startAnalysis} 
+                  disabled={status === "processing"}
+                  className="gap-2"
+                  size="lg"
+                >
+                  {status === "processing" ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing Analysis...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Start AI Analysis
+                    </>
+                  )}
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Analyze {currentDataset.name} with EDA, Modeling, and Evaluation agents
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {renderStatusIndicator()}
 

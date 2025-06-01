@@ -1,32 +1,19 @@
-
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Settings, LogOut, User, CreditCard, HelpCircle, Code, FileText } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Product, SamaritanGroup } from "@/types/dashboard";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, User, Settings, LogOut } from "lucide-react";
+import DataUploadHub from "@/components/upload/DataUploadHub";
 
 interface DashboardHeaderProps {
   selectedProduct: string;
-  handleProductChange: (productId: string) => void;
-  products: Product[];
+  handleProductChange: (product: string) => void;
+  products: { id: string; name: string }[];
   isSamaritanAI: boolean;
   activeSamaritanGroup: string;
-  samaritanGroups: SamaritanGroup[];
+  samaritanGroups: { id: string; name: string }[];
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -35,93 +22,92 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   products,
   isSamaritanAI,
   activeSamaritanGroup,
-  samaritanGroups
+  samaritanGroups,
 }) => {
-  const navigate = useNavigate();
-
-  // Handle sign out
-  const handleSignOut = () => {
-    // In a real app, you'd clear auth tokens here
-    navigate("/login");
-  };
+  const currentGroup = samaritanGroups.find(group => group.id === activeSamaritanGroup);
 
   return (
-    <header className="bg-white border-b px-6 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-insight-900 flex items-center gap-2">
-            <span className="bg-insight-500 text-white p-1 rounded">AI</span>
-            Intelligence Dashboard
-          </h1>
-          
-          {/* Product Selector */}
-          <Select value={selectedProduct} onValueChange={handleProductChange}>
-            <SelectTrigger className="w-[220px] border-insight-200 hover:bg-insight-50">
-              <SelectValue placeholder="Select Product" />
-            </SelectTrigger>
-            <SelectContent>
-              {products.map((product) => (
-                <SelectItem 
-                  key={product.id} 
-                  value={product.id}
-                  disabled={product.id === "startup-advisor" || product.id === "retail-advisor"}
-                >
-                  {product.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Show active Samaritan group if applicable */}
-          {isSamaritanAI && (
-            <div className="hidden sm:flex items-center gap-2 text-slate-600">
-              <span className="text-slate-400">→</span>
-              <span>{samaritanGroups.find(g => g.id === activeSamaritanGroup)?.name}</span>
+    <header className="border-b bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-insight-500 to-insight-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">LC</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Lead Commander</h1>
+                <p className="text-sm text-gray-500">
+                  {isSamaritanAI 
+                    ? `${currentGroup?.name} • Advanced AI Analytics` 
+                    : "AI-Powered Lead Intelligence Platform"
+                  }
+                </p>
+              </div>
             </div>
-          )}
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {/* Data Upload Hub */}
+            <DataUploadHub />
+            
+            {/* Product Selector */}
+            <Select value={selectedProduct} onValueChange={handleProductChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a product" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Samaritan Group Selector - only show if Samaritan AI is selected */}
+            {isSamaritanAI && (
+              <Select value={activeSamaritanGroup} onValueChange={(value) => console.log("Selected Samaritan Group:", value)}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Select a Samaritan Group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {samaritanGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        
-        {/* Settings Menu Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="border-insight-200 hover:bg-insight-50"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
-              <User className="mr-2 h-4 w-4" />
-              <span>Account</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <CreditCard className="mr-2 h-4 w-4" />
-              <span>Billing</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <Code className="mr-2 h-4 w-4" />
-              <span>API</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Docs</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <HelpCircle className="mr-2 h-4 w-4" />
-              <span>Help</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </header>
   );
