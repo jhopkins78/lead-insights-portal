@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,35 @@ const DatasetList: React.FC<DatasetListProps> = ({
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  if (datasets.length === 0) {
+  // De-duplicate datasets based on name and prefer "ready" status over "processing"
+  const deduplicatedDatasets = React.useMemo(() => {
+    const datasetMap = new Map<string, Dataset>();
+    
+    datasets.forEach(dataset => {
+      const key = dataset.name; // Use name as the deduplication key
+      const existing = datasetMap.get(key);
+      
+      if (!existing) {
+        datasetMap.set(key, dataset);
+      } else {
+        // Prefer "ready" status over "processing" or "error"
+        if (dataset.status === "ready" && existing.status !== "ready") {
+          datasetMap.set(key, dataset);
+        } else if (dataset.status === "processing" && existing.status === "error") {
+          datasetMap.set(key, dataset);
+        }
+        // Keep the most recent one if statuses are the same
+        else if (dataset.status === existing.status && 
+                 new Date(dataset.uploadedAt) > new Date(existing.uploadedAt)) {
+          datasetMap.set(key, dataset);
+        }
+      }
+    });
+    
+    return Array.from(datasetMap.values());
+  }, [datasets]);
+
+  if (deduplicatedDatasets.length === 0) {
     return null;
   }
 
@@ -47,7 +74,7 @@ const DatasetList: React.FC<DatasetListProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {datasets.map((dataset) => (
+          {deduplicatedDatasets.map((dataset) => (
             <div key={dataset.id} className={`flex items-center justify-between p-3 border rounded-lg ${
               currentDataset?.id === dataset.id ? 'border-green-500 bg-green-50' : ''
             }`}>

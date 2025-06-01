@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -36,11 +37,16 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
           status: 'processing' as const
         };
 
+        // Add initial processing dataset
         addDataset(newDataset);
 
-        // Simulate processing
+        // Simulate processing - update the same dataset instead of adding a new one
         setTimeout(() => {
-          addDataset({ ...newDataset, status: 'ready' });
+          // Update the existing dataset to "ready" status instead of adding a duplicate
+          const updatedDataset = { ...newDataset, status: 'ready' as const };
+          // Remove the processing version and add the ready version
+          removeDataset(newDataset.id);
+          addDataset(updatedDataset);
         }, 2000);
       }
 

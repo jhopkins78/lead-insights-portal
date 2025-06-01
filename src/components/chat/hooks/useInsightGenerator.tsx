@@ -46,7 +46,7 @@ export const useInsightGenerator = () => {
     const apiUrl = `${API_BASE_URL}/api/insights/generate`;
     const payload = {
       dataset_id: currentDataset.id,
-      query: inputMessage,
+      input: inputMessage, // Fixed: changed from "query" to "input"
     };
 
     console.log("🔍 Insight Generator API Call:");
