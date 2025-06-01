@@ -92,13 +92,17 @@ const NavigationMenuComponent: React.FC<NavigationMenuProps> = ({
                 <TooltipTrigger asChild>
                   <NavigationMenuTrigger 
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2 text-base",
+                      "flex items-center gap-2 px-4 py-2 text-base relative",
                       activePage === option.id ? "bg-insight-50 text-insight-900" : ""
                     )}
                     onClick={() => setActivePage(option.id)}
                   >
                     <option.icon className="h-5 w-5" />
                     <span>{option.label}</span>
+                    {/* Purple underline for active main tab */}
+                    {activePage === option.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-insight-500" />
+                    )}
                   </NavigationMenuTrigger>
                 </TooltipTrigger>
                 <TooltipContent>
