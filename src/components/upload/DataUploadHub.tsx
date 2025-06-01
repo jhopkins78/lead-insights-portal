@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,7 +15,7 @@ interface DataUploadHubProps {
 const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const { datasets, currentDataset, addDataset, removeDataset, setCurrentDataset } = useDataset();
+  const { datasets, currentDataset, addDataset, removeDataset, selectDataset } = useDataset();
   const { toast } = useToast();
 
   const handleFilesSelected = async (files: File[]) => {
@@ -71,7 +70,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   };
 
   const handleSelectDataset = (dataset: any) => {
-    setCurrentDataset(dataset);
+    selectDataset(dataset.id);
     toast({
       title: "Dataset selected",
       description: `Now using ${dataset.name} across all modules`,
