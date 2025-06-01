@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -279,8 +280,8 @@ const AutoAnalysis: React.FC = () => {
           </div>
         )}
 
-        {/* Visualization Grid - Now always shows placeholders when files are uploaded */}
-        {files.length > 0 && (
+        {/* Visualization Grid - Now shows when dataset is available */}
+        {currentDataset && (
           <div className="mt-6">
             <VisualizationGrid dataLoaded={status === "completed"} />
           </div>
