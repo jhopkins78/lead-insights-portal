@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface PreviewData {
   columns: string[];
@@ -13,10 +13,11 @@ interface PreviewData {
 export const usePreviewData = () => {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  const generateSamplePreviewData = () => {
-    // Only generate if we don't already have data
-    if (previewData) return;
+  const generateSamplePreviewData = useCallback(() => {
+    // Only generate if we haven't initialized yet
+    if (hasInitialized) return;
     
     setIsLoading(true);
     
@@ -39,18 +40,23 @@ export const usePreviewData = () => {
       
       setPreviewData(sampleData);
       setIsLoading(false);
+      setHasInitialized(true);
     }, 1000);
-  };
+  }, [hasInitialized]);
 
   // Only run once on mount
   useEffect(() => {
-    generateSamplePreviewData();
-  }, []); // Empty dependency array to run only once
+    if (!hasInitialized) {
+      generateSamplePreviewData();
+    }
+  }, [generateSamplePreviewData, hasInitialized]);
 
-  const refreshPreviewData = () => {
+  const refreshPreviewData = useCallback(() => {
     setPreviewData(null);
-    generateSamplePreviewData();
-  };
+    setHasInitialized(false);
+    setIsLoading(false);
+    // The useEffect will automatically trigger generateSamplePreviewData when hasInitialized becomes false
+  }, []);
 
   return {
     previewData,
