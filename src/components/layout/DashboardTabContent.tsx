@@ -70,7 +70,7 @@ const DashboardTabContent: React.FC = () => {
         <PredictionHistoryViewer />
       </TabsContent>
       
-      {/* Data Intelligence Suite Tab Contents - Fixed spacing */}
+      {/* Data Intelligence Suite Tab Contents - uploader removed as it's redundant */}
       <TabsContent value="uploader" className="mt-0 pt-2">
         <DataUploader />
       </TabsContent>

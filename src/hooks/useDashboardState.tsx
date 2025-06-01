@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useContext } from "react";
 import {
   BarChart4,
@@ -71,7 +70,6 @@ export default function useDashboardState(): DashboardState {
     automation: { icon: Zap, title: "Action Automation", shortTitle: "Actions" },
     coaching: { icon: FlaskRound, title: "Coaching Generator", shortTitle: "Coach" },
     console: { icon: Brain, title: "Agent Console", shortTitle: "Console" },
-    uploader: { icon: Database, title: "Data Uploader", shortTitle: "Uploader" },
     eda: { icon: Table2, title: "EDA Explorer", shortTitle: "EDA" },
     modelBuilder: { icon: Calculator, title: "Model Builder", shortTitle: "Builder" },
     modelEval: { icon: PieChart, title: "Model Evaluator", shortTitle: "Evaluator" },
@@ -100,7 +98,7 @@ export default function useDashboardState(): DashboardState {
   const getTabsForGroup = useCallback((group: string): string[] => {
     switch (group) {
       case "data-exploration":
-        return ["uploader", "eda"];
+        return ["eda"];
       case "modeling-evaluation":
         return ["modelBuilder", "modelEval"];
       case "forecasting-simulation":
@@ -130,6 +128,7 @@ export default function useDashboardState(): DashboardState {
       setIsSamaritanAI(newProduct.id === "samaritan-ai");
       if (newProduct.id === "samaritan-ai") {
         setActiveSamaritanGroup("data-exploration");
+        setActiveTab("eda"); // Set default tab to EDA since uploader is removed
       } else {
         setActivePage("lead-intelligence");
         setActiveTab("insight");
