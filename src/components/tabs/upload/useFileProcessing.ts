@@ -48,10 +48,13 @@ export const useFileProcessing = () => {
       });
       
       // Get API URL from env or use fallback
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "https://retool-dashboard.onrender.com";
-      const uploadUrl = `${apiBaseUrl}/api/upload-files`; // Adding /api/ prefix as most APIs use this convention
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const uploadUrl = `${apiBaseUrl}/api/upload-files`;
       
-      console.log(`Uploading files to ${uploadUrl}`);
+      console.log(`🔍 File Processing API Call:`);
+      console.log(`🔍 URL: ${uploadUrl}`);
+      console.log(`🔍 API_BASE_URL from env: ${import.meta.env.VITE_API_BASE_URL}`);
+      console.log(`🔍 Files to upload:`, files.map(f => f.name));
       
       // Upload files to the backend with timeout
       const controller = new AbortController();
@@ -66,6 +69,9 @@ export const useFileProcessing = () => {
 
         clearTimeout(timeoutId);
 
+        console.log(`🔍 Upload response status: ${uploadResponse.status}`);
+        console.log(`🔍 Upload response headers:`, Object.fromEntries(uploadResponse.headers.entries()));
+
         // If server returns error status
         if (!uploadResponse.ok) {
           // Try to get detailed error message from response
@@ -77,33 +83,34 @@ export const useFileProcessing = () => {
             errorMessage = `Upload failed with status: ${uploadResponse.status}`;
           }
           
+          console.error(`🔍 Upload API Error: ${errorMessage}`);
           // For demo purposes, if API fails, we'll simulate success
-          console.log("API error. Using demo mode for presentation:", errorMessage);
+          console.log("🔍 API error. Using demo mode for presentation:", errorMessage);
           return await simulateSuccessfulProcessing();
         }
         
         const responseData = await uploadResponse.json();
-        console.log("Upload response:", responseData);
+        console.log("🔍 Upload response data:", responseData);
         
         // Continue with normal processing
         await continueProcessing();
         
       } catch (fetchError) {
         clearTimeout(timeoutId);
-        console.error("Fetch error:", fetchError);
+        console.error("🔍 Fetch error:", fetchError);
         
         // For demo purposes, if API fails, we'll simulate success
         if (fetchError.name === 'AbortError') {
-          console.log("Request timeout. Using demo mode for presentation.");
+          console.log("🔍 Request timeout. Using demo mode for presentation.");
         } else {
-          console.log("Network error. Using demo mode for presentation.");
+          console.log("🔍 Network error. Using demo mode for presentation.");
         }
         
         return await simulateSuccessfulProcessing();
       }
       
     } catch (error) {
-      console.error("Error processing files:", error);
+      console.error("🔍 Error processing files:", error);
       setProcessing("failed");
       setError(error instanceof Error ? error.message : "An unknown error occurred");
       

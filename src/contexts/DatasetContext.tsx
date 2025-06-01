@@ -61,14 +61,24 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
     setIsLoading(true);
     setError(null);
     
+    const apiUrl = `${API_BASE_URL}/api/datasets`;
+    console.log(`🔍 Fetching datasets from: ${apiUrl}`);
+    console.log(`🔍 API_BASE_URL from env: ${import.meta.env.VITE_API_BASE_URL}`);
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/api/datasets`);
+      const response = await fetch(apiUrl);
+      
+      console.log(`🔍 Response status: ${response.status}`);
+      console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch datasets: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`🔍 API Error Response: ${errorText}`);
+        throw new Error(`Failed to fetch datasets: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log(`🔍 API Response data:`, data);
       
       // Transform backend data to match our Dataset interface
       const formattedDatasets: Dataset[] = data.datasets?.map((dataset: any) => ({
@@ -81,6 +91,7 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
         status: dataset.status || "ready"
       })) || [];
       
+      console.log(`🔍 Formatted datasets:`, formattedDatasets);
       setDatasets(formattedDatasets);
       
       // If no current dataset is selected, select the most recent one
@@ -92,26 +103,32 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       }
       
     } catch (err) {
-      console.error('Error fetching datasets:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch datasets');
+      console.error('🔍 Error fetching datasets:', err);
+      console.error('🔍 Full error details:', {
+        name: err?.constructor?.name,
+        message: err?.message,
+        stack: err?.stack
+      });
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch datasets';
+      setError(errorMessage);
       
       // Fallback to mock data for development
-      if (import.meta.env.VITE_USE_MOCK_DATA === "true") {
-        const mockDatasets: Dataset[] = [
-          {
-            id: 'mock-1',
-            name: 'sales_leads.csv',
-            uploadedAt: new Date(),
-            fileType: 'csv',
-            size: 1024000,
-            usedBy: ['EDA Explorer', 'Auto Analysis'],
-            status: 'ready'
-          }
-        ];
-        setDatasets(mockDatasets);
-        if (!currentDataset) {
-          setCurrentDataset(mockDatasets[0]);
+      console.log('🔍 Falling back to mock data...');
+      const mockDatasets: Dataset[] = [
+        {
+          id: 'mock-1',
+          name: 'sales_leads.csv',
+          uploadedAt: new Date(),
+          fileType: 'csv',
+          size: 1024000,
+          usedBy: ['EDA Explorer', 'Auto Analysis'],
+          status: 'ready'
         }
+      ];
+      setDatasets(mockDatasets);
+      if (!currentDataset) {
+        setCurrentDataset(mockDatasets[0]);
       }
     } finally {
       setIsLoading(false);

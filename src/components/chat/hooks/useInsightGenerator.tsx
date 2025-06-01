@@ -43,28 +43,37 @@ export const useInsightGenerator = () => {
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    try {
-      console.log("Sending insight request to:", `${API_BASE_URL}/api/insights/generate`);
-      console.log("Payload:", { dataset_id: currentDataset.id, query: inputMessage });
+    const apiUrl = `${API_BASE_URL}/api/insights/generate`;
+    const payload = {
+      dataset_id: currentDataset.id,
+      query: inputMessage,
+    };
 
-      const response = await fetch(`${API_BASE_URL}/api/insights/generate`, {
+    console.log("🔍 Insight Generator API Call:");
+    console.log(`🔍 URL: ${apiUrl}`);
+    console.log(`🔍 API_BASE_URL from env: ${import.meta.env.VITE_API_BASE_URL}`);
+    console.log(`🔍 Payload:`, payload);
+
+    try {
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          dataset_id: currentDataset.id,
-          query: inputMessage,
-        }),
+        body: JSON.stringify(payload),
       });
+
+      console.log(`🔍 Response status: ${response.status}`);
+      console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`🔍 API Error Response: ${errorText}`);
         throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
       }
 
       const data = await response.json();
-      console.log("API response:", data);
+      console.log("🔍 API Response data:", data);
       
       // Create agent response from API
       const agentResponse: Message = {
@@ -81,7 +90,12 @@ export const useInsightGenerator = () => {
       });
 
     } catch (error) {
-      console.error("Failed to generate insight:", error);
+      console.error("🔍 Failed to generate insight:", error);
+      console.error('🔍 Full error details:', {
+        name: error?.constructor?.name,
+        message: error?.message,
+        stack: error?.stack
+      });
       
       toast({
         title: "Insight Generation Failed",
