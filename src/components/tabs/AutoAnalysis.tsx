@@ -15,7 +15,7 @@ import { usePreviewData } from "@/hooks/usePreviewData";
 const AutoAnalysis: React.FC = () => {
   const { currentDataset, updateDatasetUsage } = useDataset();
   const { status, progress, report, agents, errorDetails, startAnalysis } = useAutoAnalysis();
-  const previewData = usePreviewData(currentDataset);
+  const { previewData } = usePreviewData();
 
   useEffect(() => {
     if (currentDataset) {
@@ -27,6 +27,15 @@ const AutoAnalysis: React.FC = () => {
   const handleStartAnalysis = () => {
     startAnalysis(currentDataset);
   };
+
+  // Convert the preview data structure to the format expected by DataPreviewSection
+  const convertedPreviewData = previewData ? previewData.rows.map(row => {
+    const obj: Record<string, any> = {};
+    previewData.columns.forEach((column, index) => {
+      obj[column] = row[index];
+    });
+    return obj;
+  }) : null;
 
   return (
     <div className="space-y-6">
@@ -52,7 +61,7 @@ const AutoAnalysis: React.FC = () => {
       />
 
       {/* Dataset Preview */}
-      <DataPreviewSection previewData={previewData} />
+      <DataPreviewSection previewData={convertedPreviewData} />
 
       {/* Visualization Grid */}
       <VisualizationSection currentDataset={currentDataset} status={status} />
