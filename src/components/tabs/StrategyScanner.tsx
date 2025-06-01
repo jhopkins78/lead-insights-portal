@@ -1,13 +1,15 @@
+
 import React, { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { FileUploader } from "@/components/ui/file-uploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Tag, FileText, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import DatasetStatus from "@/components/upload/DatasetStatus";
+import { useDataset } from "@/contexts/DatasetContext";
 
 // Types for the market signal response
 interface MarketSignalResponse {
@@ -28,18 +30,18 @@ interface MarketSignalResponse {
 }
 
 const StrategyScanner: React.FC = () => {
+  const { currentDataset } = useDataset();
   const [marketText, setMarketText] = useState<string>("");
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [scanResults, setScanResults] = useState<MarketSignalResponse | null>(null);
   const { toast } = useToast();
   
   // Function to handle the scan request
   const handleScan = async () => {
-    if (!marketText && uploadedFiles.length === 0) {
+    if (!marketText && !currentDataset) {
       toast({
         title: "Input needed",
-        description: "Please paste market text or upload a file to scan",
+        description: "Please paste market text or upload a dataset to scan",
         variant: "destructive",
       });
       return;
@@ -127,15 +129,6 @@ const StrategyScanner: React.FC = () => {
     }
   };
 
-  // Handle file upload
-  const handleFilesSelected = (files: File[]) => {
-    setUploadedFiles(files);
-    toast({
-      title: "Files selected",
-      description: `${files.length} file${files.length !== 1 ? 's' : ''} ready for scanning`,
-    });
-  };
-
   // Priority badge color
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -159,11 +152,14 @@ const StrategyScanner: React.FC = () => {
         </p>
       </div>
 
+      {/* Dataset Status */}
+      <DatasetStatus moduleName="Strategy Scanner" />
+
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="marketText" className="block text-sm font-medium">
-              Paste Market Text or Upload a File
+              Paste Market Text {currentDataset ? "or Use Uploaded Dataset" : ""}
             </label>
             <Textarea
               id="marketText"
@@ -171,17 +167,6 @@ const StrategyScanner: React.FC = () => {
               onChange={(e) => setMarketText(e.target.value)}
               placeholder="Paste your market research, news, or trend data here..."
               className="min-h-[200px]"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Or Upload Files</p>
-            <FileUploader
-              onFilesSelected={handleFilesSelected}
-              acceptedTypes={['csv', 'json', 'txt', 'pdf']}
-              maxFiles={3}
-              maxSizeMB={5}
-              className="max-w-full"
             />
           </div>
           
