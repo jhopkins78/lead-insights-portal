@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface Dataset {
@@ -80,16 +79,31 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       const data = await response.json();
       console.log(`🔍 API Response data:`, data);
       
-      // Transform backend data to match our Dataset interface
-      const formattedDatasets: Dataset[] = data.datasets?.map((dataset: any) => ({
-        id: dataset.id,
-        name: dataset.name,
-        uploadedAt: new Date(dataset.uploaded_at || dataset.uploadedAt),
-        fileType: dataset.file_type || dataset.fileType,
-        size: dataset.size || 0,
-        usedBy: dataset.used_by || dataset.usedBy || [],
-        status: dataset.status || "ready"
-      })) || [];
+      // Safely handle the API response - check if data exists and has datasets property
+      let formattedDatasets: Dataset[] = [];
+      
+      if (data && Array.isArray(data.datasets)) {
+        formattedDatasets = data.datasets.map((dataset: any) => ({
+          id: dataset.id,
+          name: dataset.name,
+          uploadedAt: new Date(dataset.uploaded_at || dataset.uploadedAt),
+          fileType: dataset.file_type || dataset.fileType,
+          size: dataset.size || 0,
+          usedBy: dataset.used_by || dataset.usedBy || [],
+          status: dataset.status || "ready"
+        }));
+      } else if (data && Array.isArray(data)) {
+        // Handle case where API returns array directly
+        formattedDatasets = data.map((dataset: any) => ({
+          id: dataset.id,
+          name: dataset.name,
+          uploadedAt: new Date(dataset.uploaded_at || dataset.uploadedAt),
+          fileType: dataset.file_type || dataset.fileType,
+          size: dataset.size || 0,
+          usedBy: dataset.used_by || dataset.usedBy || [],
+          status: dataset.status || "ready"
+        }));
+      }
       
       console.log(`🔍 Formatted datasets:`, formattedDatasets);
       setDatasets(formattedDatasets);
