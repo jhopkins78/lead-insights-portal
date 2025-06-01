@@ -1,31 +1,61 @@
 
 import { useState, useEffect } from 'react';
 
-export const usePreviewData = (currentDataset: any) => {
-  const [previewData, setPreviewData] = useState<Array<Record<string, any>> | null>(null);
+interface PreviewData {
+  columns: string[];
+  rows: any[][];
+  summary: {
+    totalRows: number;
+    totalColumns: number;
+  };
+}
 
-  // Generate sample data for preview (in a real app, this would parse the actual file)
+export const usePreviewData = () => {
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const generateSamplePreviewData = () => {
-    // Create mock data for demonstration
-    const mockData = Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1,
-      name: `Person ${i + 1}`,
-      age: Math.floor(Math.random() * 40) + 20,
-      income: Math.floor(Math.random() * 50000) + 30000,
-      category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)],
-      score: Math.floor(Math.random() * 100)
-    }));
+    // Only generate if we don't already have data
+    if (previewData) return;
     
-    setPreviewData(mockData);
+    setIsLoading(true);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      const sampleData: PreviewData = {
+        columns: ['ID', 'Name', 'Email', 'Company', 'Lead Score', 'Status'],
+        rows: [
+          [1, 'John Doe', 'john@example.com', 'Acme Corp', 85, 'Hot'],
+          [2, 'Jane Smith', 'jane@techco.com', 'TechCo', 72, 'Warm'],
+          [3, 'Bob Johnson', 'bob@startup.io', 'StartupIO', 91, 'Hot'],
+          [4, 'Alice Brown', 'alice@bigcorp.com', 'BigCorp', 64, 'Cold'],
+          [5, 'Charlie Wilson', 'charlie@innovate.com', 'InnovateCo', 78, 'Warm'],
+        ],
+        summary: {
+          totalRows: 1247,
+          totalColumns: 6
+        }
+      };
+      
+      setPreviewData(sampleData);
+      setIsLoading(false);
+    }, 1000);
   };
 
+  // Only run once on mount
   useEffect(() => {
-    if (currentDataset && currentDataset.name.endsWith('.csv')) {
-      generateSamplePreviewData();
-    } else {
-      setPreviewData(null);
-    }
-  }, [currentDataset]);
+    generateSamplePreviewData();
+  }, []); // Empty dependency array to run only once
 
-  return previewData;
+  const refreshPreviewData = () => {
+    setPreviewData(null);
+    generateSamplePreviewData();
+  };
+
+  return {
+    previewData,
+    isLoading,
+    generateSamplePreviewData,
+    refreshPreviewData
+  };
 };
