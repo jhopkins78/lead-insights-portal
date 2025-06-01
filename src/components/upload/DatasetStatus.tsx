@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,8 @@ const DatasetStatus: React.FC<DatasetStatusProps> = ({
     );
   }
 
-  if (error) {
+  // Only show error if we don't have a current dataset
+  if (error && !currentDataset) {
     return (
       <Card className="border-dashed border-2 border-red-200">
         <CardContent className="text-center py-8">

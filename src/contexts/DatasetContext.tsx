@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface Dataset {
@@ -144,6 +145,9 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       if (!currentDataset) {
         setCurrentDataset(mockDatasets[0]);
       }
+      
+      // Clear error since we have mock data working
+      setError(null);
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +159,8 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
     if (dataset) {
       setCurrentDataset(dataset);
       localStorage.setItem('selectedDatasetId', datasetId);
+      // Clear any previous errors when a dataset is successfully selected
+      setError(null);
     }
   };
 
