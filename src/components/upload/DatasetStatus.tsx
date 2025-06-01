@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useDataset } from '@/contexts/DatasetContext';
-import { Database, Clock, RefreshCw, Info } from 'lucide-react';
+import { Database, Clock, RefreshCw, Info, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DatasetStatusProps {
@@ -14,7 +14,13 @@ interface DatasetStatusProps {
 const DatasetStatus: React.FC<DatasetStatusProps> = ({ 
   moduleName
 }) => {
-  const { currentDataset, updateDatasetUsage } = useDataset();
+  const { 
+    currentDataset, 
+    updateDatasetUsage, 
+    isLoading, 
+    error, 
+    fetchAvailableDatasets 
+  } = useDataset();
 
   React.useEffect(() => {
     if (currentDataset) {
@@ -22,12 +28,48 @@ const DatasetStatus: React.FC<DatasetStatusProps> = ({
     }
   }, [currentDataset, moduleName, updateDatasetUsage]);
 
+  const handleRefresh = async () => {
+    await fetchAvailableDatasets();
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="border-dashed border-2">
+        <CardContent className="text-center py-8">
+          <RefreshCw className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+          <h3 className="text-lg font-medium mb-2">Loading datasets...</h3>
+          <p className="text-muted-foreground">
+            Fetching available datasets from the backend
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-dashed border-2 border-red-200">
+        <CardContent className="text-center py-8">
+          <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Backend Connection Error</h3>
+          <p className="text-muted-foreground mb-4">
+            {error}
+          </p>
+          <Button onClick={handleRefresh} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry Connection
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!currentDataset) {
     return (
       <Card className="border-dashed border-2">
         <CardContent className="text-center py-8">
           <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No dataset loaded</h3>
+          <h3 className="text-lg font-medium mb-2">No dataset selected</h3>
           <p className="text-muted-foreground mb-4">
             Upload data through the <strong>Data Upload Hub</strong> in the top-right header to get started with {moduleName}
           </p>
@@ -47,13 +89,30 @@ const DatasetStatus: React.FC<DatasetStatusProps> = ({
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ready': return 'border-l-green-500';
+      case 'processing': return 'border-l-yellow-500';
+      case 'error': return 'border-l-red-500';
+      default: return 'border-l-gray-500';
+    }
+  };
+
   return (
-    <Card className="border-l-4 border-l-green-500">
+    <Card className={`border-l-4 ${getStatusColor(currentDataset.status)}`}>
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Database className="h-5 w-5 text-green-600" />
+            <div className={`p-2 rounded-lg ${
+              currentDataset.status === 'ready' ? 'bg-green-100' :
+              currentDataset.status === 'processing' ? 'bg-yellow-100' :
+              'bg-red-100'
+            }`}>
+              <Database className={`h-5 w-5 ${
+                currentDataset.status === 'ready' ? 'text-green-600' :
+                currentDataset.status === 'processing' ? 'text-yellow-600' :
+                'text-red-600'
+              }`} />
             </div>
             <div>
               <h3 className="font-medium">{currentDataset.name}</h3>
@@ -69,7 +128,14 @@ const DatasetStatus: React.FC<DatasetStatusProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-green-50 text-green-700">
+            <Badge 
+              variant="secondary" 
+              className={`${
+                currentDataset.status === 'ready' ? 'bg-green-50 text-green-700' :
+                currentDataset.status === 'processing' ? 'bg-yellow-50 text-yellow-700' :
+                'bg-red-50 text-red-700'
+              }`}
+            >
               Active in {moduleName}
             </Badge>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">

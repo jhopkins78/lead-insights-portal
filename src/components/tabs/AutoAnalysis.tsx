@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import DataPreview from "@/components/data/DataPreview";
@@ -20,7 +19,7 @@ type AgentStatus = {
 type ProcessingStatusType = "idle" | "processing" | "completed" | "failed";
 
 const AutoAnalysis: React.FC = () => {
-  const { currentDataset } = useDataset();
+  const { currentDataset, updateDatasetUsage } = useDataset();
   const [status, setStatus] = useState<ProcessingStatusType>("idle");
   const [progress, setProgress] = useState(0);
   const [report, setReport] = useState<string | null>(null);
@@ -36,10 +35,12 @@ const AutoAnalysis: React.FC = () => {
   useEffect(() => {
     if (currentDataset && currentDataset.name.endsWith('.csv')) {
       generateSamplePreviewData();
+      // Update dataset usage tracking
+      updateDatasetUsage(currentDataset.id, ['Auto Analysis']);
     } else {
       setPreviewData(null);
     }
-  }, [currentDataset]);
+  }, [currentDataset, updateDatasetUsage]);
 
   // Generate sample data for preview (in a real app, this would parse the actual file)
   const generateSamplePreviewData = () => {
@@ -134,7 +135,7 @@ const AutoAnalysis: React.FC = () => {
       setErrorDetails(null);
       
       // Simulate API call with current dataset
-      console.log(`Starting analysis for dataset: ${currentDataset.name}`);
+      console.log(`Starting analysis for dataset: ${currentDataset.name} (ID: ${currentDataset.id})`);
       
       toast({
         title: "Analysis started",
