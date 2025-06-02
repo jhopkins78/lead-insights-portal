@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,29 +19,63 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   const { datasets, currentDataset, selectedDataset, addDataset, removeDataset, setSelectedDataset } = useDataset();
   const { toast } = useToast();
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
   const handleFilesSelected = async (files: File[]) => {
     if (files.length === 0) return;
 
     setIsUploading(true);
     
     try {
-      // Process each file
-      for (const file of files) {
+      console.log(`🔄 Health Check: Starting file upload for ${files.length} files`);
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append("files", file);
+        console.log(`🔄 Health Check: Adding file to upload: ${file.name} (${file.size} bytes)`);
+      });
+
+      // Upload to the backend API
+      const uploadUrl = `${API_BASE_URL}/api/upload-files`;
+      console.log(`🔄 Health Check: Uploading to: ${uploadUrl}`);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      console.log(`🔄 Health Check: Upload response status: ${uploadResponse.status}`);
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        const errorMessage = errorData.detail || errorData.message || `Upload failed with status: ${uploadResponse.status}`;
+        console.error(`🔄 Health Check: Upload failed:`, errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const responseData = await uploadResponse.json();
+      console.log(`🔄 Health Check: Upload response data:`, responseData);
+
+      // Process each file and create dataset records
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Create dataset with API response data or fallback to file data
         const newDataset = {
-          id: `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: responseData.dataset_id || `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: file.name,
           uploadedAt: new Date(),
           fileType: file.name.split('.').pop()?.toLowerCase() || 'unknown',
           size: file.size,
-          usedBy: ['Auto Analysis', 'EDA Explorer', 'Strategy Scanner'],
-          status: 'ready' as const // Set directly to ready for immediate use
+          usedBy: [],
+          status: responseData.status || 'ready' as const
         };
 
-        // Add the ready dataset
+        console.log(`🔄 Health Check: Creating dataset record:`, newDataset);
+
+        // Add the dataset to context
         addDataset(newDataset);
-        
-        // Automatically select this dataset
-        setSelectedDataset(newDataset);
       }
 
       toast({
@@ -50,9 +85,10 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
 
       setIsOpen(false);
     } catch (error) {
+      console.error("🔄 Health Check: Upload error:", error);
       toast({
         title: "Upload failed",
-        description: "There was an error processing your files",
+        description: error instanceof Error ? error.message : "There was an error processing your files",
         variant: "destructive",
       });
     } finally {
@@ -61,6 +97,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   };
 
   const handleRemoveDataset = (id: string) => {
+    console.log(`🔄 Health Check: Removing dataset: ${id}`);
     removeDataset(id);
     toast({
       title: "Dataset removed",
@@ -69,6 +106,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   };
 
   const handleSelectDataset = (dataset: any) => {
+    console.log(`🔄 Health Check: Selecting dataset from hub: ${dataset.name}`);
     setSelectedDataset(dataset);
     toast({
       title: "Dataset selected",

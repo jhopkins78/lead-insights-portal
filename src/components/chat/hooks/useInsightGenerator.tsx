@@ -34,6 +34,9 @@ export const useInsightGenerator = () => {
       return;
     }
 
+    console.log(`🔄 Health Check: Generating insight for dataset: ${currentDataset.name} (ID: ${currentDataset.id})`);
+    console.log(`🔄 Health Check: User query: ${inputMessage}`);
+
     const userMessage: Message = {
       role: "user",
       content: inputMessage,
@@ -49,9 +52,9 @@ export const useInsightGenerator = () => {
       input: inputMessage,
     };
 
-    console.log("🔍 Insight Generator API Call:");
-    console.log(`🔍 URL: ${apiUrl}`);
-    console.log(`🔍 Payload:`, payload);
+    console.log("🔄 Health Check: Insight Generator API Call:");
+    console.log(`🔄 Health Check: URL: ${apiUrl}`);
+    console.log(`🔄 Health Check: Payload:`, payload);
 
     try {
       const response = await fetch(apiUrl, {
@@ -62,16 +65,22 @@ export const useInsightGenerator = () => {
         body: JSON.stringify(payload),
       });
 
-      console.log(`🔍 Response status: ${response.status}`);
+      console.log(`🔄 Health Check: Insight API Response status: ${response.status}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`🔍 API Error Response: ${errorText}`);
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
+        console.error(`🔄 Health Check: Insight API Error Response: ${errorText}`);
+        
+        // Handle specific error cases
+        if (response.status === 404 || errorText.includes("Dataset not found")) {
+          throw new Error(`Dataset "${currentDataset.name}" was not found on the server. Please try uploading the dataset again.`);
+        } else {
+          throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
+        }
       }
 
       const data = await response.json();
-      console.log("🔍 API Response data:", data);
+      console.log("🔄 Health Check: Insight API Response data:", data);
       
       // Create agent response from API
       const agentResponse: Message = {
@@ -88,7 +97,7 @@ export const useInsightGenerator = () => {
       });
 
     } catch (error) {
-      console.error("🔍 Failed to generate insight:", error);
+      console.error("🔄 Health Check: Failed to generate insight:", error);
       
       toast({
         title: "Insight Generation Failed",
@@ -101,7 +110,7 @@ export const useInsightGenerator = () => {
         ...prev,
         {
           role: "agent",
-          content: "I apologize, but I'm currently unable to analyze your data due to a connection issue. Please check your network connection and try again.",
+          content: `I apologize, but I'm currently unable to analyze your data. ${error instanceof Error ? error.message : 'Please check your network connection and try again.'}`,
           timestamp: new Date(),
         },
       ]);
