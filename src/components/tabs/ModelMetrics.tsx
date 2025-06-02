@@ -47,15 +47,19 @@ const ModelMetrics: React.FC = () => {
   const fetchMetrics = async () => {
     setLoading(true);
     setError(null);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    
     try {
-      // In a real implementation, this would fetch from your API
-      const response = await fetch("https://api.example.com/model-metrics");
+      console.log(`📊 Fetching model metrics from: ${API_BASE_URL}/model-metrics`);
+      const response = await fetch(`${API_BASE_URL}/model-metrics`);
       
       if (!response.ok) {
+        console.warn(`📊 Model metrics API not available (${response.status}), using mock data`);
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log(`📊 Successfully fetched model metrics from API`);
       setMetrics(data.best_metrics);
       setComparisons(data.model_comparisons);
       
@@ -72,8 +76,8 @@ const ModelMetrics: React.FC = () => {
       
       setBestModel(bestModelData?.model_name || null);
     } catch (err) {
-      console.error("Failed to fetch metrics:", err);
-      setError("Failed to fetch model metrics. Please try again.");
+      console.warn("📊 Failed to fetch model metrics from API, using mock data:", err);
+      setError("Model metrics temporarily unavailable. Showing sample data.");
       
       // For demonstration purposes, set mock data
       const mockComparisons = [
@@ -207,15 +211,14 @@ const ModelMetrics: React.FC = () => {
       </div>
       
       {error && (
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
+        <Alert variant="default">
+          <AlertTitle>Notice</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {loading ? (
-          // ... keep existing code (skeleton loaders)
           Array(3).fill(0).map((_, i) => (
             <Card key={i}>
               <CardHeader className="pb-2">
@@ -227,7 +230,6 @@ const ModelMetrics: React.FC = () => {
             </Card>
           ))
         ) : (
-          // ... keep existing code (metric cards)
           <>
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader className="pb-2">
@@ -311,7 +313,6 @@ const ModelMetrics: React.FC = () => {
         )}
       </div>
       
-      {/* New Model Comparison Section */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold">Compare Models</h2>
         

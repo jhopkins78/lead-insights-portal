@@ -1,22 +1,27 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeLead, LeadAnalysisRequest } from "@/services/api";
 import { Lead } from "@/components/coaching/types";
 
-// Mock API function to fetch leads
+// Updated API function to fetch leads
 const fetchLeads = async (): Promise<Lead[]> => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/get_leads`);
+    console.log(`🔍 Fetching leads from: ${API_BASE_URL}/get_leads`);
+    const response = await fetch(`${API_BASE_URL}/get_leads`);
     
     if (!response.ok) {
+      console.warn(`🔍 API endpoint not available (${response.status}), using mock data`);
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log(`🔍 Successfully fetched ${data.length} leads from API`);
+    return data;
   } catch (error) {
-    console.error("Failed to fetch leads:", error);
+    console.warn("🔍 Failed to fetch leads from API, using mock data:", error);
     // Return mock data for demonstration purposes
     return [
       {

@@ -19,15 +19,26 @@ interface LeadSelectorProps {
 }
 
 const LeadSelector: React.FC<LeadSelectorProps> = ({ selectedLeadId, onLeadSelect }) => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  
   // Fetch leads
   const { data: leads, isLoading, error } = useQuery({
     queryKey: ["leads"],
     queryFn: async () => {
-      const response = await fetch("https://api.example.com/get_leads");
-      if (!response.ok) {
-        throw new Error("Failed to fetch leads");
+      try {
+        console.log(`🔍 Fetching leads for selector from: ${API_BASE_URL}/get_leads`);
+        const response = await fetch(`${API_BASE_URL}/get_leads`);
+        if (!response.ok) {
+          console.warn(`🔍 Leads API not available (${response.status}), using empty array`);
+          throw new Error("Failed to fetch leads");
+        }
+        const data = await response.json();
+        console.log(`🔍 Successfully fetched ${data.length} leads for selector`);
+        return data as Lead[];
+      } catch (error) {
+        console.warn("🔍 Failed to fetch leads for selector, returning empty array:", error);
+        return [] as Lead[];
       }
-      return response.json() as Promise<Lead[]>;
     },
   });
 
@@ -37,7 +48,7 @@ const LeadSelector: React.FC<LeadSelectorProps> = ({ selectedLeadId, onLeadSelec
       {isLoading ? (
         <Skeleton className="h-10 w-full" />
       ) : error ? (
-        <div className="text-red-500 text-sm">Error loading leads</div>
+        <div className="text-amber-500 text-sm">Leads temporarily unavailable</div>
       ) : (
         <Select value={selectedLeadId} onValueChange={onLeadSelect}>
           <SelectTrigger className="w-full">
