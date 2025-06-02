@@ -44,9 +44,9 @@ export const useFileProcessing = () => {
         formData.append("files", file);
       });
       
-      // Get API URL from env
+      // Get API URL from env and use the working endpoint
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-      const uploadUrl = `${apiBaseUrl}/api/upload-files`;
+      const uploadUrl = `${apiBaseUrl}/api/datasets/upload_dataset`;
       
       console.log(`🔍 File Processing API Call:`);
       console.log(`🔍 URL: ${uploadUrl}`);

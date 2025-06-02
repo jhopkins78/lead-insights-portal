@@ -40,8 +40,8 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
         formData.append("files", file);
       });
 
-      // Upload to the backend API
-      const uploadUrl = `${API_BASE_URL}/api/upload-files`;
+      // Updated upload URL to use the working endpoint
+      const uploadUrl = `${API_BASE_URL}/api/datasets/upload_dataset`;
       console.log(`🔄 Upload Request: POST ${uploadUrl}`);
       
       // Log FormData contents for debugging
@@ -143,7 +143,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
       if (error instanceof TypeError) {
         if (error.message.includes("Load failed") || error.message.includes("Failed to fetch")) {
           userMessage = "Cannot connect to the upload server. The backend service may be starting up (this can take 30-60 seconds on first request). Please try again in a moment.";
-          debugInfo = `Network Error: ${error.message}. API URL: ${API_BASE_URL}/api/upload-files`;
+          debugInfo = `Network Error: ${error.message}. API URL: ${API_BASE_URL}/api/datasets/upload_dataset`;
         } else if (error.message.includes("abort")) {
           userMessage = "Upload timed out. The service may be spinning up. Please try again.";
           debugInfo = `Timeout Error: ${error.message}`;
@@ -160,7 +160,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
         errorType: error.constructor.name,
         message: error.message,
         stack: error.stack,
-        apiUrl: `${API_BASE_URL}/api/upload-files`,
+        apiUrl: `${API_BASE_URL}/api/datasets/upload_dataset`,
         timestamp: new Date().toISOString(),
         files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
       });
