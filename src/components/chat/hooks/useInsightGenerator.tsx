@@ -8,9 +8,21 @@ export const useInsightGenerator = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { currentDataset } = useDataset();
+  const { selectedDataset, currentDataset } = useDataset();
+  
+  // Use selectedDataset primarily, fallback to currentDataset
+  const activeDataset = selectedDataset || currentDataset;
   
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  
+  // Debug logging for dataset changes
+  useEffect(() => {
+    console.log("🔄 Health Check: useInsightGenerator dataset updated:", {
+      selectedDataset: selectedDataset?.name,
+      currentDataset: currentDataset?.name,
+      activeDataset: activeDataset?.name
+    });
+  }, [selectedDataset, currentDataset, activeDataset]);
   
   // Initial welcome message
   useEffect(() => {
@@ -25,7 +37,7 @@ export const useInsightGenerator = () => {
 
   const handleSendMessage = async (inputMessage: string) => {
     // Check if dataset is selected
-    if (!currentDataset) {
+    if (!activeDataset) {
       toast({
         title: "No Dataset Selected",
         description: "Please select a dataset from the Data Upload Hub before generating insights.",
@@ -34,7 +46,7 @@ export const useInsightGenerator = () => {
       return;
     }
 
-    console.log(`🔄 Health Check: Generating insight for dataset: ${currentDataset.name} (ID: ${currentDataset.id})`);
+    console.log(`🔄 Health Check: Generating insight for dataset: ${activeDataset.name} (ID: ${activeDataset.id})`);
     console.log(`🔄 Health Check: User query: ${inputMessage}`);
 
     const userMessage: Message = {
@@ -48,7 +60,7 @@ export const useInsightGenerator = () => {
 
     const apiUrl = `${API_BASE_URL}/api/insights/generate`;
     const payload = {
-      dataset_id: currentDataset.id,
+      dataset_id: activeDataset.id,
       input: inputMessage,
     };
 
@@ -73,7 +85,7 @@ export const useInsightGenerator = () => {
         
         // Handle specific error cases
         if (response.status === 404 || errorText.includes("Dataset not found")) {
-          throw new Error(`Dataset "${currentDataset.name}" was not found on the server. Please try uploading the dataset again.`);
+          throw new Error(`Dataset "${activeDataset.name}" was not found on the server. Please try uploading the dataset again.`);
         } else {
           throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
         }
@@ -131,6 +143,6 @@ export const useInsightGenerator = () => {
     isLoading,
     handleSendMessage,
     addToReport,
-    currentDataset
+    currentDataset: activeDataset // Return the active dataset for backward compatibility
   };
 };
