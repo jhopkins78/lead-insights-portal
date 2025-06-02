@@ -46,12 +46,11 @@ export const useInsightGenerator = () => {
     const apiUrl = `${API_BASE_URL}/api/insights/generate`;
     const payload = {
       dataset_id: currentDataset.id,
-      input: inputMessage, // Fixed: changed from "query" to "input"
+      input: inputMessage,
     };
 
     console.log("🔍 Insight Generator API Call:");
     console.log(`🔍 URL: ${apiUrl}`);
-    console.log(`🔍 API_BASE_URL from env: ${import.meta.env.VITE_API_BASE_URL}`);
     console.log(`🔍 Payload:`, payload);
 
     try {
@@ -64,7 +63,6 @@ export const useInsightGenerator = () => {
       });
 
       console.log(`🔍 Response status: ${response.status}`);
-      console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -91,11 +89,6 @@ export const useInsightGenerator = () => {
 
     } catch (error) {
       console.error("🔍 Failed to generate insight:", error);
-      console.error('🔍 Full error details:', {
-        name: error?.constructor?.name,
-        message: error?.message,
-        stack: error?.stack
-      });
       
       toast({
         title: "Insight Generation Failed",
@@ -108,7 +101,7 @@ export const useInsightGenerator = () => {
         ...prev,
         {
           role: "agent",
-          content: "I apologize, but I'm currently unable to analyze your data due to a connection issue. Please ensure:\n\n* Your dataset is properly uploaded\n* The backend service is running\n* Your network connection is stable\n\nThen try your query again.",
+          content: "I apologize, but I'm currently unable to analyze your data due to a connection issue. Please check your network connection and try again.",
           timestamp: new Date(),
         },
       ]);
@@ -122,7 +115,6 @@ export const useInsightGenerator = () => {
       title: "Added to report",
       description: "This insight has been added to your report.",
     });
-    // In a real app, this would call an API to add the insight to a report
   };
 
   return {

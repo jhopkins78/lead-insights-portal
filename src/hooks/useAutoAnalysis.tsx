@@ -22,66 +22,7 @@ export const useAutoAnalysis = () => {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Helper function to simulate agent progress
-  const simulateAgentProgress = async () => {
-    // EDA Agent
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setAgents(prev => prev.map(a => a.name === "EDA Agent" ? {...a, status: "completed"} : a));
-    setAgents(prev => prev.map(a => a.name === "Modeling Agent" ? {...a, status: "running"} : a));
-    setProgress(60);
-    
-    // Modeling Agent
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setAgents(prev => prev.map(a => a.name === "Modeling Agent" ? {...a, status: "completed"} : a));
-    setAgents(prev => prev.map(a => a.name === "Evaluation Agent" ? {...a, status: "running"} : a));
-    setProgress(80);
-    
-    // Evaluation Agent
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setAgents(prev => prev.map(a => a.name === "Evaluation Agent" ? {...a, status: "completed"} : a));
-    setProgress(95);
-  };
-
-  // Simulate demo mode analysis when API is unavailable
-  const simulateDemoAnalysis = async () => {
-    setProgress(40);
-    setStatus("processing");
-    toast({
-      title: "Demo Mode Active",
-      description: "Using demo mode because the server is unavailable.",
-      variant: "default"
-    });
-    
-    // Simulate agent progress
-    await simulateAgentProgress();
-    
-    // Set sample report
-    setReport(`# Auto Analysis Report (Demo Mode)
-
-## Data Overview
-- Total Records: 1,250
-- Features: 8
-- Missing Values: 2.3%
-- Target Variable: Lead Conversion Rate
-
-## Key Findings
-1. Income level is highly correlated with conversion rate (r=0.78)
-2. Geographic clusters show significant patterns
-3. Seasonal trends identified in Q2 and Q4
-
-## Model Performance
-- Random Forest: AUC 0.84
-- Gradient Boosting: AUC 0.86
-- Neural Network: AUC 0.79
-
-## Recommendations
-- Focus marketing on high-income segments
-- Create specialized campaigns for Q2/Q4
-- Implement lead scoring based on the Gradient Boosting model`);
-    
-    setProgress(100);
-    setStatus("completed");
-  };
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
   const startAnalysis = useCallback(async (currentDataset: any) => {
     if (!currentDataset) {
@@ -98,7 +39,6 @@ export const useAutoAnalysis = () => {
       setProgress(10);
       setErrorDetails(null);
       
-      // Simulate API call with current dataset
       console.log(`Starting analysis for dataset: ${currentDataset.name} (ID: ${currentDataset.id})`);
       
       toast({
@@ -106,8 +46,45 @@ export const useAutoAnalysis = () => {
         description: `Processing ${currentDataset.name} with AI agents`,
       });
 
-      // Simulate the analysis process
-      await simulateDemoAnalysis();
+      // Call the real API endpoint
+      const response = await fetch(`${API_BASE_URL}/api/analysis/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          dataset_id: currentDataset.id
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Update progress based on API response
+      if (data.agents) {
+        setAgents(data.agents);
+      }
+      
+      if (data.progress !== undefined) {
+        setProgress(data.progress);
+      }
+      
+      if (data.report) {
+        setReport(data.report);
+      }
+      
+      if (data.status === "completed") {
+        setStatus("completed");
+        setProgress(100);
+        toast({
+          title: "Analysis completed",
+          description: "All AI agents have finished processing your dataset",
+        });
+      }
       
     } catch (error) {
       console.error("Error during analysis:", error);
@@ -116,11 +93,11 @@ export const useAutoAnalysis = () => {
       
       toast({
         title: "Analysis failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred during analysis",
+        description: "Unable to process the dataset. Please check your connection and try again.",
         variant: "destructive"
       });
     }
-  }, [toast, simulateDemoAnalysis]);
+  }, [toast, API_BASE_URL]);
 
   return {
     status,

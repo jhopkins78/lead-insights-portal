@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface Dataset {
@@ -13,12 +14,12 @@ interface Dataset {
 interface DatasetContextType {
   datasets: Dataset[];
   currentDataset: Dataset | null;
-  selectedDataset: Dataset | null; // Add explicit selectedDataset
+  selectedDataset: Dataset | null;
   isLoading: boolean;
   error: string | null;
   fetchAvailableDatasets: () => Promise<void>;
   selectDataset: (datasetId: string) => void;
-  setSelectedDataset: (dataset: Dataset) => void; // Add direct setter
+  setSelectedDataset: (dataset: Dataset) => void;
   addDataset: (dataset: Dataset) => void;
   removeDataset: (id: string) => void;
   updateDatasetUsage: (id: string, modules: string[]) => void;
@@ -66,13 +67,11 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
     
     const apiUrl = `${API_BASE_URL}/api/datasets`;
     console.log(`🔍 Fetching datasets from: ${apiUrl}`);
-    console.log(`🔍 API_BASE_URL from env: ${import.meta.env.VITE_API_BASE_URL}`);
     
     try {
       const response = await fetch(apiUrl);
       
       console.log(`🔍 Response status: ${response.status}`);
-      console.log(`🔍 Response headers:`, Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -83,7 +82,7 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       const data = await response.json();
       console.log(`🔍 API Response data:`, data);
       
-      // Safely handle the API response - check if data exists and has datasets property
+      // Handle the API response format
       let formattedDatasets: Dataset[] = [];
       
       if (data && Array.isArray(data.datasets)) {
@@ -97,7 +96,6 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
           status: dataset.status || "ready"
         }));
       } else if (data && Array.isArray(data)) {
-        // Handle case where API returns array directly
         formattedDatasets = data.map((dataset: any) => ({
           id: dataset.id,
           name: dataset.name,
@@ -122,35 +120,14 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       
     } catch (err) {
       console.error('🔍 Error fetching datasets:', err);
-      console.error('🔍 Full error details:', {
-        name: err?.constructor?.name,
-        message: err?.message,
-        stack: err?.stack
-      });
       
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch datasets';
       setError(errorMessage);
       
-      // Fallback to mock data for development
-      console.log('🔍 Falling back to mock data...');
-      const mockDatasets: Dataset[] = [
-        {
-          id: 'mock-1',
-          name: 'sales_leads.csv',
-          uploadedAt: new Date(),
-          fileType: 'csv',
-          size: 1024000,
-          usedBy: ['EDA Explorer', 'Auto Analysis'],
-          status: 'ready'
-        }
-      ];
-      setDatasets(mockDatasets);
-      if (!currentDataset) {
-        setCurrentDataset(mockDatasets[0]);
-      }
-      
-      // Clear error since we have mock data working
-      setError(null);
+      // Clear datasets when API fails - no fallback to mock data
+      setDatasets([]);
+      setCurrentDataset(null);
+      setSelectedDatasetState(null);
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +140,6 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       setCurrentDataset(dataset);
       setSelectedDatasetState(dataset);
       localStorage.setItem('selectedDatasetId', datasetId);
-      // Clear any previous errors when a dataset is successfully selected
       setError(null);
       console.log(`Selected dataset: ${dataset.name} (ID: ${dataset.id})`);
     }
