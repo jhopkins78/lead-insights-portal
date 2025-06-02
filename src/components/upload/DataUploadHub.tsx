@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,7 +15,7 @@ interface DataUploadHubProps {
 const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const { datasets, currentDataset, addDataset, removeDataset, selectDataset } = useDataset();
+  const { datasets, currentDataset, selectedDataset, addDataset, removeDataset, setSelectedDataset } = useDataset();
   const { toast } = useToast();
 
   const handleFilesSelected = async (files: File[]) => {
@@ -34,25 +33,19 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
           fileType: file.name.split('.').pop()?.toLowerCase() || 'unknown',
           size: file.size,
           usedBy: ['Auto Analysis', 'EDA Explorer', 'Strategy Scanner'],
-          status: 'processing' as const
+          status: 'ready' as const // Set directly to ready for immediate use
         };
 
-        // Add initial processing dataset
+        // Add the ready dataset
         addDataset(newDataset);
-
-        // Simulate processing - update the same dataset instead of adding a new one
-        setTimeout(() => {
-          // Update the existing dataset to "ready" status instead of adding a duplicate
-          const updatedDataset = { ...newDataset, status: 'ready' as const };
-          // Remove the processing version and add the ready version
-          removeDataset(newDataset.id);
-          addDataset(updatedDataset);
-        }, 2000);
+        
+        // Automatically select this dataset
+        setSelectedDataset(newDataset);
       }
 
       toast({
         title: "Files uploaded successfully",
-        description: `${files.length} file(s) processed and available across all modules`,
+        description: `${files.length} file(s) processed and ready for analysis`,
       });
 
       setIsOpen(false);
@@ -76,7 +69,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
   };
 
   const handleSelectDataset = (dataset: any) => {
-    selectDataset(dataset.id);
+    setSelectedDataset(dataset);
     toast({
       title: "Dataset selected",
       description: `Now using ${dataset.name} across all modules`,

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface Dataset {
@@ -14,10 +13,12 @@ interface Dataset {
 interface DatasetContextType {
   datasets: Dataset[];
   currentDataset: Dataset | null;
+  selectedDataset: Dataset | null; // Add explicit selectedDataset
   isLoading: boolean;
   error: string | null;
   fetchAvailableDatasets: () => Promise<void>;
   selectDataset: (datasetId: string) => void;
+  setSelectedDataset: (dataset: Dataset) => void; // Add direct setter
   addDataset: (dataset: Dataset) => void;
   removeDataset: (id: string) => void;
   updateDatasetUsage: (id: string, modules: string[]) => void;
@@ -42,6 +43,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) => {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [currentDataset, setCurrentDataset] = useState<Dataset | null>(null);
+  const [selectedDataset, setSelectedDatasetState] = useState<Dataset | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +54,7 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
       const savedDataset = datasets.find(d => d.id === savedDatasetId);
       if (savedDataset) {
         setCurrentDataset(savedDataset);
+        setSelectedDatasetState(savedDataset);
       }
     }
   }, [datasets]);
@@ -158,32 +161,53 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
     const dataset = datasets.find(d => d.id === datasetId);
     if (dataset) {
       setCurrentDataset(dataset);
+      setSelectedDatasetState(dataset);
       localStorage.setItem('selectedDatasetId', datasetId);
       // Clear any previous errors when a dataset is successfully selected
       setError(null);
+      console.log(`Selected dataset: ${dataset.name} (ID: ${dataset.id})`);
     }
+  };
+
+  // Direct setter for selectedDataset
+  const setSelectedDataset = (dataset: Dataset) => {
+    setSelectedDatasetState(dataset);
+    setCurrentDataset(dataset);
+    localStorage.setItem('selectedDatasetId', dataset.id);
+    setError(null);
+    console.log(`Set selected dataset: ${dataset.name} (ID: ${dataset.id})`);
   };
 
   // Add a new dataset (called after successful upload)
   const addDataset = (dataset: Dataset) => {
     setDatasets(prev => {
-      const updated = [...prev, dataset];
+      // Remove any existing dataset with the same name to avoid duplicates
+      const filtered = prev.filter(d => d.name !== dataset.name);
+      const updated = [...filtered, dataset];
       return updated.sort((a, b) => 
         new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
       );
     });
     
-    // Automatically select the newly added dataset
-    selectDataset(dataset.id);
+    // Automatically select the newly added dataset only if it's ready
+    if (dataset.status === 'ready') {
+      setSelectedDataset(dataset);
+    }
   };
 
   // Remove a dataset
   const removeDataset = (id: string) => {
     setDatasets(prev => prev.filter(d => d.id !== id));
-    if (currentDataset?.id === id) {
+    if (currentDataset?.id === id || selectedDataset?.id === id) {
       const remaining = datasets.filter(d => d.id !== id);
-      setCurrentDataset(remaining.length > 0 ? remaining[0] : null);
-      localStorage.removeItem('selectedDatasetId');
+      const newSelected = remaining.length > 0 ? remaining[0] : null;
+      setCurrentDataset(newSelected);
+      setSelectedDatasetState(newSelected);
+      if (newSelected) {
+        localStorage.setItem('selectedDatasetId', newSelected.id);
+      } else {
+        localStorage.removeItem('selectedDatasetId');
+      }
     }
   };
 
@@ -206,10 +230,12 @@ export const DatasetProvider: React.FC<DatasetProviderProps> = ({ children }) =>
   const value = {
     datasets,
     currentDataset,
+    selectedDataset,
     isLoading,
     error,
     fetchAvailableDatasets,
     selectDataset,
+    setSelectedDataset,
     addDataset,
     removeDataset,
     updateDatasetUsage,

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ const DatasetList: React.FC<DatasetListProps> = ({
     const datasetMap = new Map<string, Dataset>();
     
     datasets.forEach(dataset => {
-      const key = dataset.name; // Use name as the deduplication key
+      const key = dataset.name;
       const existing = datasetMap.get(key);
       
       if (!existing) {
