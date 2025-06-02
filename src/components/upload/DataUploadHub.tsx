@@ -27,6 +27,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
     
     try {
       console.log(`🔄 Upload Triggered: Starting file upload for ${files.length} files`);
+      console.log(`🔄 API Base URL: ${API_BASE_URL}`);
       
       // Log each file being uploaded
       files.forEach((file, index) => {
@@ -42,43 +43,52 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
       // Upload to the backend API
       const uploadUrl = `${API_BASE_URL}/api/upload-files`;
       console.log(`🔄 Upload Request: POST ${uploadUrl}`);
-      console.log(`🔄 API Base URL: ${API_BASE_URL}`);
-      console.log(`🔄 FormData entries:`, Array.from(formData.entries()).map(([key, value]) => [key, value instanceof File ? `File: ${value.name}` : value]));
+      
+      // Log FormData contents for debugging
+      const formDataEntries = Array.from(formData.entries());
+      console.log(`🔄 FormData entries count: ${formDataEntries.length}`);
+      formDataEntries.forEach(([key, value], index) => {
+        if (value instanceof File) {
+          console.log(`🔄 FormData[${index}]: ${key} = File: ${value.name} (${value.size} bytes)`);
+        } else {
+          console.log(`🔄 FormData[${index}]: ${key} = ${value}`);
+        }
+      });
 
-      // Add timeout and better error handling
+      // Add timeout and retry logic for service spin-up delay
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        console.error("🔄 Upload Timeout: Request took longer than 30 seconds");
+        console.error("🔄 Upload Timeout: Request took longer than 45 seconds");
         controller.abort();
-      }, 30000);
+      }, 45000); // Increased timeout for service spin-up
 
+      console.log(`🔄 Starting fetch request at: ${new Date().toISOString()}`);
+      
       const uploadResponse = await fetch(uploadUrl, {
         method: "POST",
         body: formData,
         signal: controller.signal,
-        // Add headers for debugging
-        headers: {
-          // Don't set Content-Type for FormData, let browser set it
-        },
       });
 
       clearTimeout(timeoutId);
+      
+      console.log(`🔄 Upload Response received at: ${new Date().toISOString()}`);
       console.log(`🔄 Upload Response: Status ${uploadResponse.status} ${uploadResponse.statusText}`);
       console.log(`🔄 Response Headers:`, Object.fromEntries(uploadResponse.headers.entries()));
 
       if (!uploadResponse.ok) {
-        let errorData;
         let errorMessage;
+        let responseBody;
         
         try {
-          const responseText = await uploadResponse.text();
-          console.error(`🔄 Upload Error Response Body:`, responseText);
+          responseBody = await uploadResponse.text();
+          console.error(`🔄 Upload Error Response Body:`, responseBody);
           
           try {
-            errorData = JSON.parse(responseText);
-            errorMessage = errorData.detail || errorData.message || errorData.error || responseText;
+            const errorData = JSON.parse(responseBody);
+            errorMessage = errorData.detail || errorData.message || errorData.error || responseBody;
           } catch {
-            errorMessage = responseText || `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`;
+            errorMessage = responseBody || `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`;
           }
         } catch {
           errorMessage = `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`;
@@ -91,14 +101,19 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
       const responseData = await uploadResponse.json();
       console.log(`🔄 Upload Success: Response data:`, responseData);
 
+      // Validate response structure
+      if (!responseData.dataset_id && !responseData.id) {
+        console.warn(`⚠️ Warning: Response missing dataset_id field. Response:`, responseData);
+      }
+
       // Process each file and create dataset records
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         
         // Create dataset with API response data or fallback to file data
         const newDataset = {
-          id: responseData.dataset_id || `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: file.name,
+          id: responseData.dataset_id || responseData.id || `dataset_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: responseData.name || file.name,
           uploadedAt: new Date(),
           fileType: file.name.split('.').pop()?.toLowerCase() || 'unknown',
           size: file.size,
@@ -127,10 +142,10 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
       
       if (error instanceof TypeError) {
         if (error.message.includes("Load failed") || error.message.includes("Failed to fetch")) {
-          userMessage = "Cannot connect to the upload server. Please check if the backend is running.";
+          userMessage = "Cannot connect to the upload server. The backend service may be starting up (this can take 30-60 seconds on first request). Please try again in a moment.";
           debugInfo = `Network Error: ${error.message}. API URL: ${API_BASE_URL}/api/upload-files`;
         } else if (error.message.includes("abort")) {
-          userMessage = "Upload timed out. The file may be too large or the server is slow.";
+          userMessage = "Upload timed out. The service may be spinning up. Please try again.";
           debugInfo = `Timeout Error: ${error.message}`;
         } else {
           userMessage = `Network error: ${error.message}`;
@@ -144,7 +159,9 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
       console.error(`❌ Upload Error Details:`, {
         errorType: error.constructor.name,
         message: error.message,
+        stack: error.stack,
         apiUrl: `${API_BASE_URL}/api/upload-files`,
+        timestamp: new Date().toISOString(),
         files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
       });
 
