@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,35 +26,70 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
     setIsUploading(true);
     
     try {
-      console.log(`🔄 Health Check: Starting file upload for ${files.length} files`);
+      console.log(`🔄 Upload Triggered: Starting file upload for ${files.length} files`);
       
+      // Log each file being uploaded
+      files.forEach((file, index) => {
+        console.log(`🔄 File ${index + 1}: ${file.name} (${file.size} bytes, type: ${file.type})`);
+      });
+
       // Create FormData for file upload
       const formData = new FormData();
       files.forEach(file => {
         formData.append("files", file);
-        console.log(`🔄 Health Check: Adding file to upload: ${file.name} (${file.size} bytes)`);
       });
 
       // Upload to the backend API
       const uploadUrl = `${API_BASE_URL}/api/upload-files`;
-      console.log(`🔄 Health Check: Uploading to: ${uploadUrl}`);
+      console.log(`🔄 Upload Request: POST ${uploadUrl}`);
+      console.log(`🔄 API Base URL: ${API_BASE_URL}`);
+      console.log(`🔄 FormData entries:`, Array.from(formData.entries()).map(([key, value]) => [key, value instanceof File ? `File: ${value.name}` : value]));
+
+      // Add timeout and better error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error("🔄 Upload Timeout: Request took longer than 30 seconds");
+        controller.abort();
+      }, 30000);
 
       const uploadResponse = await fetch(uploadUrl, {
         method: "POST",
         body: formData,
+        signal: controller.signal,
+        // Add headers for debugging
+        headers: {
+          // Don't set Content-Type for FormData, let browser set it
+        },
       });
 
-      console.log(`🔄 Health Check: Upload response status: ${uploadResponse.status}`);
+      clearTimeout(timeoutId);
+      console.log(`🔄 Upload Response: Status ${uploadResponse.status} ${uploadResponse.statusText}`);
+      console.log(`🔄 Response Headers:`, Object.fromEntries(uploadResponse.headers.entries()));
 
       if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json().catch(() => ({}));
-        const errorMessage = errorData.detail || errorData.message || `Upload failed with status: ${uploadResponse.status}`;
-        console.error(`🔄 Health Check: Upload failed:`, errorMessage);
+        let errorData;
+        let errorMessage;
+        
+        try {
+          const responseText = await uploadResponse.text();
+          console.error(`🔄 Upload Error Response Body:`, responseText);
+          
+          try {
+            errorData = JSON.parse(responseText);
+            errorMessage = errorData.detail || errorData.message || errorData.error || responseText;
+          } catch {
+            errorMessage = responseText || `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`;
+          }
+        } catch {
+          errorMessage = `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`;
+        }
+        
+        console.error(`❌ Upload Failed: ${errorMessage}`);
         throw new Error(errorMessage);
       }
 
       const responseData = await uploadResponse.json();
-      console.log(`🔄 Health Check: Upload response data:`, responseData);
+      console.log(`🔄 Upload Success: Response data:`, responseData);
 
       // Process each file and create dataset records
       for (let i = 0; i < files.length; i++) {
@@ -72,7 +106,7 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
           status: responseData.status || 'ready' as const
         };
 
-        console.log(`🔄 Health Check: Creating dataset record:`, newDataset);
+        console.log(`🔄 Creating Dataset Record:`, newDataset);
 
         // Add the dataset to context
         addDataset(newDataset);
@@ -85,10 +119,38 @@ const DataUploadHub: React.FC<DataUploadHubProps> = ({ trigger }) => {
 
       setIsOpen(false);
     } catch (error) {
-      console.error("🔄 Health Check: Upload error:", error);
+      console.error("❌ Upload Failed:", error);
+      
+      // Enhanced error logging and user feedback
+      let userMessage = "There was an error processing your files";
+      let debugInfo = "";
+      
+      if (error instanceof TypeError) {
+        if (error.message.includes("Load failed") || error.message.includes("Failed to fetch")) {
+          userMessage = "Cannot connect to the upload server. Please check if the backend is running.";
+          debugInfo = `Network Error: ${error.message}. API URL: ${API_BASE_URL}/api/upload-files`;
+        } else if (error.message.includes("abort")) {
+          userMessage = "Upload timed out. The file may be too large or the server is slow.";
+          debugInfo = `Timeout Error: ${error.message}`;
+        } else {
+          userMessage = `Network error: ${error.message}`;
+          debugInfo = `TypeError: ${error.message}`;
+        }
+      } else if (error instanceof Error) {
+        userMessage = error.message;
+        debugInfo = `Error: ${error.message}`;
+      }
+      
+      console.error(`❌ Upload Error Details:`, {
+        errorType: error.constructor.name,
+        message: error.message,
+        apiUrl: `${API_BASE_URL}/api/upload-files`,
+        files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
+      });
+
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "There was an error processing your files",
+        description: userMessage,
         variant: "destructive",
       });
     } finally {
