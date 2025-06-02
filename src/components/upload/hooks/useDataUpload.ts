@@ -24,10 +24,10 @@ export const useDataUpload = () => {
         console.log(`🔄 File ${index + 1}: ${file.name} (${file.size} bytes, type: ${file.type})`);
       });
 
-      // Create FormData for file upload
+      // Create FormData for file upload - backend expects "file" field name
       const formData = new FormData();
       files.forEach(file => {
-        formData.append("files", file);
+        formData.append("file", file); // Changed from "files" to "file"
       });
 
       // Updated upload URL to use the working endpoint

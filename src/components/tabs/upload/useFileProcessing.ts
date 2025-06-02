@@ -38,10 +38,10 @@ export const useFileProcessing = () => {
       setProgress(10);
       setProcessingDetails("Uploading files to the processing server...");
       
-      // Create formData for file upload
+      // Create formData for file upload - backend expects "file" field name
       const formData = new FormData();
       files.forEach(file => {
-        formData.append("files", file);
+        formData.append("file", file); // Changed from "files" to "file"
       });
       
       // Get API URL from env and use the working endpoint
